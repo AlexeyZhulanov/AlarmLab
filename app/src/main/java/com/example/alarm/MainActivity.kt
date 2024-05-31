@@ -1,50 +1,64 @@
 package com.example.alarm
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModelProvider
-import com.example.alarm.ui.theme.AlarmTheme
+import android.view.Menu
+import android.view.MenuInflater
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.alarm.databinding.FragmentMainBinding
+import com.example.alarm.model.Alarm
+import com.example.alarm.model.AlarmService
+import com.example.alarm.model.AlarmsListener
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var binding: FragmentMainBinding
+    private lateinit var adapter: AlarmsAdapter
+
+    private val alarmsService: AlarmService
+        get() = (applicationContext as App).alarmsService
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.main_page)
-        setContent {
-            //val val val....
-            AlarmTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    Greeting("Android")
-                }
+        binding = FragmentMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        adapter = AlarmsAdapter(object: AlarmActionListener {
+            override fun onAlarmEnabled(alarm: Alarm) {
+                alarm.isEnabled = !alarm.isEnabled
+                Toast.makeText(this@MainActivity, "IsEnabled: ${alarm.isEnabled}", Toast.LENGTH_SHORT).show()
             }
-        }
-        vm = ViewModelProvider(this).get(MainViewModel::class.java)
+
+            override fun onAlarmDelete(alarm: Alarm) {
+                Toast.makeText(this@MainActivity, "Alarm minutes: ${alarm.timeMinutes}", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onAlarmChange(alarm: Alarm) {
+                Toast.makeText(this@MainActivity, "Alarm hours: ${alarm.timeHours}", Toast.LENGTH_SHORT).show()
+            }
+        })
+
+        val layoutManager = LinearLayoutManager(this)
+        binding.recyclerview.layoutManager = layoutManager
+        binding.recyclerview.adapter = adapter
+
+        alarmsService.addListener(alarmsListener)
+
+        setSupportActionBar(binding.toolbar)
+        binding.toolbar.title = "Будильник"
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.alarm_menu, menu)
+        return true
+    }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AlarmTheme {
-        Greeting("Android")
+    override fun onDestroy() {
+        super.onDestroy()
+        alarmsService.removeListener(alarmsListener)
+    }
+
+    private val alarmsListener: AlarmsListener = {
+        adapter.alarms = it
     }
 }
