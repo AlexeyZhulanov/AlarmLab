@@ -2,49 +2,42 @@ package com.example.alarm
 
 import android.os.Bundle
 import android.view.Menu
-import android.view.MenuInflater
-import android.widget.Toast
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.alarm.databinding.FragmentMainBinding
-import com.example.alarm.model.Alarm
-import com.example.alarm.model.AlarmService
-import com.example.alarm.model.AlarmsListener
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import com.example.alarm.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: FragmentMainBinding
-    private lateinit var adapter: AlarmsAdapter
+    private lateinit var binding: ActivityMainBinding
 
-    private val alarmsService: AlarmService
-        get() = (applicationContext as App).alarmsService
+    private val currentFragment: Fragment
+        get() = supportFragmentManager.findFragmentById(R.id.fragmentContainer)!!
+
+    private val fragmentListener = object : FragmentManager.FragmentLifecycleCallbacks() {
+        override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: Bundle?) {
+            super.onFragmentViewCreated(fm, f, v, savedInstanceState)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = FragmentMainBinding.inflate(layoutInflater)
+        binding = ActivityMainBinding.inflate(layoutInflater).also { setContentView(it.root) }
         setContentView(binding.root)
+        if (savedInstanceState == null) {
+            supportFragmentManager
+                .beginTransaction()
+                .add(R.id.fragmentContainer, AlarmFragment())
+                .commit()
+        }
 
-        adapter = AlarmsAdapter(object: AlarmActionListener {
-            override fun onAlarmEnabled(alarm: Alarm) {
-                alarm.isEnabled = !alarm.isEnabled
-                Toast.makeText(this@MainActivity, "IsEnabled: ${alarm.isEnabled}", Toast.LENGTH_SHORT).show()
-            }
+        supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentListener, false)
+    }
 
-            override fun onAlarmDelete(alarm: Alarm) {
-                Toast.makeText(this@MainActivity, "Alarm minutes: ${alarm.timeMinutes}", Toast.LENGTH_SHORT).show()
-            }
-
-            override fun onAlarmChange(alarm: Alarm) {
-                Toast.makeText(this@MainActivity, "Alarm hours: ${alarm.timeHours}", Toast.LENGTH_SHORT).show()
-            }
-        })
-
-        val layoutManager = LinearLayoutManager(this)
-        binding.recyclerview.layoutManager = layoutManager
-        binding.recyclerview.adapter = adapter
-
-        alarmsService.addListener(alarmsListener)
-
-        setSupportActionBar(binding.toolbar) //adds a button
+    override fun onDestroy() {
+        super.onDestroy()
+        supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentListener)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -52,12 +45,4 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        alarmsService.removeListener(alarmsListener)
-    }
-
-    private val alarmsListener: AlarmsListener = {
-        adapter.alarms = it
-    }
 }
