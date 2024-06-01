@@ -44,8 +44,7 @@ class MainActivity : AppCompatActivity() {
 
         alarmsService.addListener(alarmsListener)
 
-        setSupportActionBar(binding.toolbar)
-        binding.toolbar.title = "Будильник"
+        setSupportActionBar(binding.toolbar) //adds a button
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {

@@ -36,7 +36,7 @@ class AlarmsAdapter(
             }
             else -> {
                 //actionListener.onAlarmChange(alarm)
-
+                showFullScreenDialog(v, alarm)
             }
         }
     }
@@ -65,6 +65,10 @@ class AlarmsAdapter(
     }
 
     override fun getItemCount(): Int = alarms.size
+
+    private fun showFullScreenDialog(view: View, alarm: Alarm) {
+        // todo
+    }
 
     class AlarmsViewHolder(
         val binding: ItemAlarmBinding
