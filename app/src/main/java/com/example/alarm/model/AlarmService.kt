@@ -12,8 +12,7 @@ class AlarmService {
             id = (0..100).random().toLong(),
             timeHours = (10..23).random(),
             timeMinutes = (10..59).random(),
-            interval = 5,
-            isEnabled = false
+            enabled = false
         )}.toMutableList()
     }
 
@@ -29,7 +28,7 @@ class AlarmService {
 
     fun isEnabledAlarm(alarm: Alarm) {
         val indexAlarm = alarms.indexOfFirst { it.id == alarm.id }
-        alarms[indexAlarm].isEnabled = !alarms[indexAlarm].isEnabled
+        alarms[indexAlarm].enabled = !alarms[indexAlarm].enabled
         notifyChanges()
     }
 

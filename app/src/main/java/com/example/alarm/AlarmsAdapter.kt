@@ -58,9 +58,7 @@ class AlarmsAdapter(
             switch1.tag = alarm
             val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}"
             timeTextView.text = txt
-            val intervalTxt: String = "раз в ${alarm.interval} минут"
-            intervalTextView.text = intervalTxt
-            switch1.isChecked = alarm.isEnabled
+            switch1.isChecked = alarm.enabled
         }
     }
 

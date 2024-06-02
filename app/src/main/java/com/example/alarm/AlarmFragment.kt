@@ -26,8 +26,8 @@ class AlarmFragment : Fragment() {
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
         adapter = AlarmsAdapter(object: AlarmActionListener {
             override fun onAlarmEnabled(alarm: Alarm) {
-                alarm.isEnabled = !alarm.isEnabled
-                Toast.makeText(requireContext(), "IsEnabled: ${alarm.isEnabled}", Toast.LENGTH_SHORT).show()
+                alarm.enabled = !alarm.enabled
+                Toast.makeText(requireContext(), "IsEnabled: ${alarm.enabled}", Toast.LENGTH_SHORT).show()
             }
 
             override fun onAlarmDelete(alarm: Alarm) {
