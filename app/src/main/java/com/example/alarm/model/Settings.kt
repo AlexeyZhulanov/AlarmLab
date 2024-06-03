@@ -3,8 +3,8 @@ package com.example.alarm.model
 data class Settings(
     val id: Long,
     var melody: String = "default",
-    var vibration: Int = 1,
+    var vibration: Boolean = true,
     var interval: Int = 5,
     var repetitions: Int = 3,
-    var disable_type: Int = 0
+    var disableType: Int = 0
     )

@@ -73,7 +73,6 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.fragment:fragment-ktx:1.7.1")
-    kapt("groupId:artifactId:version")
     implementation("androidx.room:room-runtime:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
