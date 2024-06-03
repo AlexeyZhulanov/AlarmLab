@@ -1,6 +1,8 @@
 package com.example.alarm.model
 
 
+// Можно переименовать в AlarmRoomRepository и тут надо все переписывать
+
 typealias AlarmsListener = (alarms: List<Alarm>) -> Unit
 class AlarmService {
     private var alarms = mutableListOf<Alarm>()
