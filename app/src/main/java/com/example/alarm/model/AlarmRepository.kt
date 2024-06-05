@@ -2,8 +2,6 @@ package com.example.alarm.model
 
 import kotlinx.coroutines.flow.Flow
 
-// Придется что-то явно фиксить
-
 interface AlarmRepository {
 
     suspend fun getAlarms(): MutableList<Alarm>
@@ -12,7 +10,9 @@ interface AlarmRepository {
 
     suspend fun updateAlarm(alarm: Alarm)
 
-    suspend fun updateEnabled(enabled: Boolean)
+    suspend fun updateEnabled(id: Long, enabled: Boolean)
 
-    suspend fun getAlarmById(id: Long): Flow<Alarm>
+    fun getAlarmById(id: Long): Flow<Alarm?>
+
+    suspend fun deleteAlarms(list: List<Alarm>)
 }
