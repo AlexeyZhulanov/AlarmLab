@@ -5,5 +5,5 @@ data class Alarm(
     var timeHours: Int = 7,
     var timeMinutes: Int = 0,
     var name: String = "default",
-    var enabled: Boolean = false
+    var enabled: Int = 0
 )

@@ -10,24 +10,43 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
+import com.example.alarm.model.AlarmRepository
 import com.example.alarm.model.AlarmService
 import com.example.alarm.model.AlarmsListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
+@OptIn(DelicateCoroutinesApi::class)
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
 
     private val alarmsService: AlarmService
-        get() = (requireActivity().applicationContext as App).alarmsService
+        get() = Repositories.alarmRepository as AlarmService
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        Repositories.init(requireActivity().applicationContext)
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
         adapter = AlarmsAdapter(object: AlarmActionListener {
             override fun onAlarmEnabled(alarm: Alarm) {
-                alarm.enabled = !alarm.enabled
-                Toast.makeText(requireContext(), "IsEnabled: ${alarm.enabled}", Toast.LENGTH_SHORT).show()
+                GlobalScope.launch {
+                    //alarm.enabled = !alarm.enabled
+                    var bool = 0
+                    if(alarm.enabled == 0) bool = 1
+                    alarmsService.updateEnabled(alarm.id, bool)
+                    Toast.makeText(
+                        requireContext(),
+                        "IsEnabled: ${alarm.enabled}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
 
             override fun onAlarmDelete(alarm: Alarm) {

@@ -15,7 +15,7 @@ import com.example.alarm.model.Settings
 data class SettingsDbEntity(
     @PrimaryKey(autoGenerate = true) val id: Long,
     var melody: String,
-    var vibration: Boolean,
+    var vibration: Int,
     var interval: Int,
     var repetitions: Int,
     @ColumnInfo(name = "disable_type") var disableType: Int

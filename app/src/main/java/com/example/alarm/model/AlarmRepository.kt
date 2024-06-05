@@ -10,7 +10,7 @@ interface AlarmRepository {
 
     suspend fun updateAlarm(alarm: Alarm)
 
-    suspend fun updateEnabled(id: Long, enabled: Boolean)
+    suspend fun updateEnabled(id: Long, enabled: Int)
 
     fun getAlarmById(id: Long): Flow<Alarm?>
 

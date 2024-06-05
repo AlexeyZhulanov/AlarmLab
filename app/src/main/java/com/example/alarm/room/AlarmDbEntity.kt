@@ -17,7 +17,7 @@ data class AlarmDbEntity(
     @ColumnInfo(name = "time_hours", collate = ColumnInfo.NOCASE) var timeHours: Int,
     @ColumnInfo(name = "time_minutes", collate = ColumnInfo.NOCASE) var timeMinutes: Int,
     var name: String,
-    var enabled: Boolean
+    var enabled: Int
     ) {
 
     fun toAlarm(): Alarm = Alarm(
