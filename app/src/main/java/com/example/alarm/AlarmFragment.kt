@@ -10,23 +10,20 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
-import com.example.alarm.model.AlarmRepository
 import com.example.alarm.model.AlarmService
 import com.example.alarm.model.AlarmsListener
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
-@OptIn(DelicateCoroutinesApi::class)
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
 
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
 
@@ -36,8 +33,7 @@ class AlarmFragment : Fragment() {
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
         adapter = AlarmsAdapter(object: AlarmActionListener {
             override fun onAlarmEnabled(alarm: Alarm) {
-                GlobalScope.launch {
-                    //alarm.enabled = !alarm.enabled
+                uiScope.launch {
                     var bool = 0
                     if(alarm.enabled == 0) bool = 1
                     alarmsService.updateEnabled(alarm.id, bool)

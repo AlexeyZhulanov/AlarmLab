@@ -56,7 +56,9 @@ class AlarmsAdapter(
         with(holder.binding) {
             holder.itemView.tag = alarm
             switch1.tag = alarm
-            val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}"
+            var tm = ""
+            if(alarm.timeMinutes == 0) tm = "0"
+            val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}${tm}"
             timeTextView.text = txt
             switch1.isChecked = alarm.enabled == 1
         }
