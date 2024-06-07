@@ -36,7 +36,7 @@ class AlarmsAdapter(
             }
             else -> {
                 //actionListener.onAlarmChange(alarm)
-                showFullScreenDialog(v, alarm)
+                showBottomSheetDialogChange(v, alarm) //on change
             }
         }
     }
@@ -66,7 +66,7 @@ class AlarmsAdapter(
 
     override fun getItemCount(): Int = alarms.size
 
-    private fun showFullScreenDialog(view: View, alarm: Alarm) {
+    private fun showBottomSheetDialogChange(view: View, alarm: Alarm) {
         // todo
     }
 

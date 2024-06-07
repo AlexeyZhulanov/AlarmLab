@@ -39,7 +39,7 @@ class AlarmFragment : Fragment() {
                     alarmsService.updateEnabled(alarm.id, bool)
                     Toast.makeText(
                         requireContext(),
-                        "IsEnabled: ${alarm.enabled}",
+                        "IsEnabled: $bool",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -60,6 +60,10 @@ class AlarmFragment : Fragment() {
         alarmsService.addListener(alarmsListener)
         (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
+        binding.floatingActionButtonAdd.setOnClickListener {
+            showBottomSheetDialogAdd()
+        }
+
         return binding.root
     }
 
@@ -71,5 +75,9 @@ class AlarmFragment : Fragment() {
 
     private val alarmsListener: AlarmsListener = {
         adapter.alarms = it
+    }
+
+    private fun showBottomSheetDialogAdd() {
+        BottomSheetFragment().show(childFragmentManager, "AddTag")
     }
 }
