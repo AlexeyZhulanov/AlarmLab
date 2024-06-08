@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +11,6 @@ import com.example.alarm.model.Alarm
 
 interface AlarmActionListener {
     fun onAlarmEnabled(alarm: Alarm)
-    fun onAlarmDelete(alarm: Alarm)
     fun onAlarmChange(alarm: Alarm)
     fun onAlarmLongClicked()
 }
@@ -26,9 +26,30 @@ class AlarmsAdapter(
             notifyDataSetChanged()
         }
 
-    private var isLongClicked: Boolean = false
     private var canLongClick: Boolean = true
-    private var globalAlarm: Alarm = Alarm(999999)
+    private var checkedPositions: MutableSet<Int> = mutableSetOf()
+
+    fun getDeleteList(): List<Alarm> {
+        val list = mutableListOf<Alarm>()
+        for(i in checkedPositions) list.add(alarms[i])
+        return list
+    }
+
+    fun clearPositions() {
+        canLongClick = true
+        checkedPositions.clear()
+    }
+    private fun savePosition(alarm: Alarm) {
+            for (i in alarms.indices) {
+                if (alarms[i] == alarm) {
+                    if (i in checkedPositions) {
+                        checkedPositions.remove(i)
+                    } else {
+                        checkedPositions.add(i)
+                    }
+                }
+            }
+    }
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onClick(v: View) {
@@ -38,13 +59,14 @@ class AlarmsAdapter(
                 if(canLongClick) actionListener.onAlarmEnabled(alarm)
             }
             R.id.checkBox -> {
-                if(!canLongClick) actionListener.onAlarmDelete(alarm)
+                if(!canLongClick) {
+                    savePosition(alarm)
+                }
             }
             else -> {
                 if(canLongClick) actionListener.onAlarmChange(alarm)
                 else {
-                    isLongClicked = true
-                    globalAlarm = alarm //very bad works
+                    savePosition(alarm)
                     notifyDataSetChanged()
                 }
             }
@@ -54,16 +76,14 @@ class AlarmsAdapter(
     @SuppressLint("NotifyDataSetChanged")
     override fun onLongClick(v: View?): Boolean {
         if(canLongClick) {
-            isLongClicked = true
-            //need to call function invisible visible all elements
-            globalAlarm = v?.tag as Alarm
+            val alarm = v?.tag as Alarm
+            savePosition(alarm)
             actionListener.onAlarmLongClicked()
             notifyDataSetChanged()
             canLongClick = false
         }
         return true
     }
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlarmsViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -77,28 +97,27 @@ class AlarmsAdapter(
     }
 
     override fun onBindViewHolder(holder: AlarmsViewHolder, position: Int) {
-        val alarm = alarms[position]
-        with(holder.binding) {
-            holder.itemView.tag = alarm
-            switch1.tag = alarm
-            var tm = ""
-            if(alarm.timeMinutes == 0) tm = "0"
-            val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}${tm}"
-            timeTextView.text = txt
-            switch1.isChecked = alarm.enabled == 1
-            if(isLongClicked) {
-                checkBox.tag = alarm
-                switch1.visibility = View.INVISIBLE
-                checkBox.visibility = View.VISIBLE
-                if(alarm == globalAlarm) {
-                    checkBox.isChecked = true
-                    globalAlarm = Alarm(999999)
+            val alarm = alarms[position]
+            with(holder.binding) {
+                holder.itemView.tag = alarm
+                switch1.tag = alarm
+                var tm = ""
+                if (alarm.timeMinutes == 0) tm = "0"
+                val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}${tm}"
+                timeTextView.text = txt
+                switch1.isChecked = alarm.enabled == 1
+                if (!canLongClick) {
+                    checkBox.tag = alarm
+                    switch1.visibility = View.INVISIBLE
+                    checkBox.visibility = View.VISIBLE
+                    checkBox.isChecked = position in checkedPositions
+                }
+                else {
+                    switch1.visibility = View.VISIBLE
+                    checkBox.visibility = View.GONE
                 }
             }
-        }
-        if(position == alarms.size-1) isLongClicked = false //need to test
     }
-
     override fun getItemCount(): Int = alarms.size
 
     class AlarmsViewHolder(

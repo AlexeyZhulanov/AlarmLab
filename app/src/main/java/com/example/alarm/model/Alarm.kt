@@ -6,4 +6,10 @@ data class Alarm(
     var timeMinutes: Int = 0,
     var name: String = "default",
     var enabled: Int = 0
-)
+) {
+    override fun toString(): String {
+        return "id: $id, hours:$timeHours, minutes:$timeMinutes, " +
+                "name:$name, enabled:$enabled"
+    }
+}
+

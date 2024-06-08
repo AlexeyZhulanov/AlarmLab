@@ -72,6 +72,7 @@ class AlarmService(
         for(l in list) {
             alarmDao.deleteAlarm(AlarmDbEntity.fromUserInput(l))
         }
+        alarms = getAlarms()
         notifyChanges()
     }
 

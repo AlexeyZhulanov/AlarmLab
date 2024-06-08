@@ -1,6 +1,8 @@
 package com.example.alarm
 
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,7 +29,6 @@ class AlarmFragment : Fragment() {
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
 
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
@@ -44,11 +45,6 @@ class AlarmFragment : Fragment() {
                     ).show()
                 }
             }
-
-            override fun onAlarmDelete(alarm: Alarm) {
-                Toast.makeText(requireContext(), "Alarm minutes: ${alarm.timeMinutes}", Toast.LENGTH_SHORT).show()
-            }
-
             override fun onAlarmChange(alarm: Alarm) {
                 BottomSheetFragment(false, alarm.id).show(childFragmentManager, "ChangeTag")
             }
@@ -56,6 +52,15 @@ class AlarmFragment : Fragment() {
             override fun onAlarmLongClicked() {
                 binding.floatingActionButtonAdd.visibility = View.GONE
                 binding.floatingActionButtonDelete.visibility = View.VISIBLE
+                binding.floatingActionButtonDelete.setOnClickListener {
+                    val alarmsToDelete = adapter.getDeleteList()
+                    if(alarmsToDelete.isNotEmpty()) {
+                        uiScope.launch { alarmsService.deleteAlarms(alarmsToDelete) }
+                        binding.floatingActionButtonDelete.visibility = View.GONE
+                        binding.floatingActionButtonAdd.visibility = View.VISIBLE
+                        adapter.clearPositions()
+                    }
+                }
             }
         })
         val layoutManager = LinearLayoutManager(requireContext())
