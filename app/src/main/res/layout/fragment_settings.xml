@@ -4,11 +4,37 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_height="match_parent">
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/topGuideLine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.08"
+        />
+
+    <TextView
+        android:id="@+id/header"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="Настройки"
+        android:fontFamily="casual"
+        android:gravity="center"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="30sp"
+        android:autoSizeMaxTextSize="100sp"
+        android:autoSizeStepGranularity="2sp"
+        android:textStyle="bold|italic"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/topGuideLine"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
     <LinearLayout
+        android:id="@+id/linear_block"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/addchange"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topGuideLine"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginStart="20dp"
@@ -34,6 +60,7 @@
                 android:textStyle="bold|italic"/>
 
             <TextView
+                android:id="@+id/melody_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Classic"
@@ -47,6 +74,7 @@
                 android:textStyle="bold|italic"/>
 
             <Button
+                android:id="@+id/change_melody"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Сменить мелодию"
@@ -72,7 +100,7 @@
                 android:textStyle="bold|italic"/>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switch2"
+                android:id="@+id/switch_vibration"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
@@ -85,7 +113,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Отложить"
+                android:text="Повторять сигнал"
                 android:fontFamily="casual"
                 android:gravity="center|start"
                 android:autoSizeTextType="uniform"
@@ -95,7 +123,7 @@
                 android:textStyle="bold|italic"/>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switch3"
+                android:id="@+id/switch_repeat"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
@@ -118,6 +146,7 @@
                 android:autoSizeStepGranularity="2sp"
                 android:textStyle="bold|italic"/>
             <RadioGroup
+                android:id="@+id/repeat_radio_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"

@@ -61,7 +61,7 @@ class AlarmService(
 
     override suspend fun updateEnabled(id: Long, enabled: Int) {
         alarmDao.updateEnabled(AlarmUpdateEnabledTuple(id, enabled))
-        //notifyChanges()
+        alarms = getAlarms()
     }
 
     override fun getAlarmById(id: Long): Flow<Alarm?> {
@@ -76,6 +76,16 @@ class AlarmService(
         notifyChanges()
     }
 
+    suspend fun offAlarms() {
+        for(alarm in alarms) {
+            if (alarm.enabled == 1) {
+                alarmDao.updateEnabled(AlarmUpdateEnabledTuple(alarm.id, 0))
+            }
+        }
+        alarms = getAlarms()
+        notifyChanges()
+    }
+
     suspend fun getSettings(): Settings {
         return settingsDao.getSettings().toSettings()
     }
@@ -83,24 +93,6 @@ class AlarmService(
     suspend fun updateSettings(settings: Settings) {
         settingsDao.updateSettings(SettingsDbEntity.fromUserInput(settings))
     }
-
-//    fun changeAlarm(alarm: Alarm, newAlarm: Alarm) {
-//        val indexToChange = alarms.indexOfFirst { it.id == alarm.id }
-//        alarms[indexToChange] = newAlarm
-//        notifyChanges()
-//    }
-//
-//    fun isEnabledAlarm(alarm: Alarm) {
-//        val indexAlarm = alarms.indexOfFirst { it.id == alarm.id }
-//        alarms[indexAlarm].enabled = !alarms[indexAlarm].enabled
-//        notifyChanges()
-//    }
-//
-//    fun deleteAlarm(alarm: Alarm) {
-//        val indexToDelete = alarms.indexOfFirst { it.id == alarm.id }
-//        if(indexToDelete != -1) alarms.removeAt(indexToDelete)
-//        notifyChanges()
-//    }
 
     fun addListener(listener: AlarmsListener) {
         listeners.add(listener)
