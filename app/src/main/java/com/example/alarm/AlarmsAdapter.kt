@@ -26,7 +26,7 @@ class AlarmsAdapter(
             notifyDataSetChanged()
         }
 
-    private var canLongClick: Boolean = true
+    var canLongClick: Boolean = true
     private var checkedPositions: MutableSet<Int> = mutableSetOf()
 
     fun getDeleteList(): List<Alarm> {

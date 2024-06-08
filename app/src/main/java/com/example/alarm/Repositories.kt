@@ -8,8 +8,6 @@ import com.example.alarm.room.AppDatabase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
-// Нужно добавить в активити строку или в фрагмент: Repositories.init(applicationContext)
-
 object Repositories {
     private lateinit var applicationContext: Context
 
@@ -18,8 +16,6 @@ object Repositories {
             .createFromAsset("init_db.db")
             .build()
     }
-
-    //private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
     val alarmRepository: AlarmRepository by lazy {
         AlarmService(database.getAlarmDao(), database.getSettingsDao())

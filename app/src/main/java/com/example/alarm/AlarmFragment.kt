@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -52,6 +53,25 @@ class AlarmFragment : Fragment() {
             override fun onAlarmLongClicked() {
                 binding.floatingActionButtonAdd.visibility = View.GONE
                 binding.floatingActionButtonDelete.visibility = View.VISIBLE
+                requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+                    @SuppressLint("NotifyDataSetChanged")
+                    override fun handleOnBackPressed() {
+                        if (!adapter.canLongClick) {
+                            adapter.clearPositions()
+                            adapter.notifyDataSetChanged()
+                            binding.floatingActionButtonDelete.visibility = View.GONE
+                            binding.floatingActionButtonAdd.visibility = View.VISIBLE
+                            uiScope.launch {
+                                alarmsService.getAlarms()
+                                alarmsService.notifyChanges()
+                            }
+                        } else {
+                            //Removing this callback
+                            remove()
+                            requireActivity().onBackPressedDispatcher.onBackPressed()
+                        }
+                    }
+                })
                 binding.floatingActionButtonDelete.setOnClickListener {
                     val alarmsToDelete = adapter.getDeleteList()
                     if(alarmsToDelete.isNotEmpty()) {
@@ -81,7 +101,6 @@ class AlarmFragment : Fragment() {
         super.onDestroyView()
         alarmsService.removeListener(alarmsListener)
     }
-
     private val alarmsListener: AlarmsListener = {
         adapter.alarms = it
     }

@@ -107,7 +107,7 @@ class AlarmService(
         listener.invoke(alarms)
     }
     fun removeListener(listener: AlarmsListener) = listeners.remove(listener)
-    private fun notifyChanges() {
+    fun notifyChanges() {
         listeners.forEach { it.invoke(alarms) }
     }
 }
