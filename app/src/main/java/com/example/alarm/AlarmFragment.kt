@@ -52,6 +52,11 @@ class AlarmFragment : Fragment() {
             override fun onAlarmChange(alarm: Alarm) {
                 BottomSheetFragment(false, alarm.id).show(childFragmentManager, "ChangeTag")
             }
+
+            override fun onAlarmLongClicked() {
+                binding.floatingActionButtonAdd.visibility = View.GONE
+                binding.floatingActionButtonDelete.visibility = View.VISIBLE
+            }
         })
         val layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerview.layoutManager = layoutManager
