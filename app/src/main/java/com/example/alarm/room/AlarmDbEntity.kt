@@ -30,7 +30,7 @@ data class AlarmDbEntity(
 
     companion object {
         fun fromUserInput(alarm: Alarm): AlarmDbEntity = AlarmDbEntity(
-            id = 0,
+            id = alarm.id,
             timeHours = alarm.timeHours,
             timeMinutes = alarm.timeMinutes,
             name = alarm.name,

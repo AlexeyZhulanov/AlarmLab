@@ -35,8 +35,7 @@ class AlarmsAdapter(
                 actionListener.onAlarmDelete(alarm)
             }
             else -> {
-                //actionListener.onAlarmChange(alarm)
-                showBottomSheetDialogChange(v, alarm) //on change
+                actionListener.onAlarmChange(alarm)
             }
         }
     }
@@ -65,10 +64,6 @@ class AlarmsAdapter(
     }
 
     override fun getItemCount(): Int = alarms.size
-
-    private fun showBottomSheetDialogChange(view: View, alarm: Alarm) {
-        // todo
-    }
 
     class AlarmsViewHolder(
         val binding: ItemAlarmBinding

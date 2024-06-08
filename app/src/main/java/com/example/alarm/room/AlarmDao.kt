@@ -18,7 +18,7 @@ interface AlarmDao {
     @Update(entity = AlarmDbEntity::class)
     suspend fun updateEnabled(updateEnabledTuple: AlarmUpdateEnabledTuple)
 
-    @Update(entity = AlarmDbEntity::class)
+    @Update
     suspend fun updateAlarm(alarmDbEntity: AlarmDbEntity)
 
     @Query("SELECT * FROM alarms WHERE id = :alarmId")

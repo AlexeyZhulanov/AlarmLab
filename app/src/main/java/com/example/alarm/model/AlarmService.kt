@@ -49,11 +49,13 @@ class AlarmService(
 
     override suspend fun addAlarm(alarm: Alarm) {
         alarmDao.addAlarm(AlarmDbEntity.fromUserInput(alarm))
+        alarms = getAlarms()
         notifyChanges()
     }
 
     override suspend fun updateAlarm(alarm: Alarm) {
         alarmDao.updateAlarm(AlarmDbEntity.fromUserInput(alarm))
+        alarms = getAlarms()
         notifyChanges()
     }
 

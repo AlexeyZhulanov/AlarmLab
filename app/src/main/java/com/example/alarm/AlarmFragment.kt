@@ -50,7 +50,7 @@ class AlarmFragment : Fragment() {
             }
 
             override fun onAlarmChange(alarm: Alarm) {
-                Toast.makeText(requireContext(), "Alarm hours: ${alarm.timeHours}", Toast.LENGTH_SHORT).show()
+                BottomSheetFragment(false, alarm.id).show(childFragmentManager, "ChangeTag")
             }
         })
         val layoutManager = LinearLayoutManager(requireContext())
@@ -61,7 +61,7 @@ class AlarmFragment : Fragment() {
         (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
         binding.floatingActionButtonAdd.setOnClickListener {
-            showBottomSheetDialogAdd()
+            BottomSheetFragment(true).show(childFragmentManager, "AddTag")
         }
 
         return binding.root
@@ -72,12 +72,7 @@ class AlarmFragment : Fragment() {
         alarmsService.removeListener(alarmsListener)
     }
 
-
     private val alarmsListener: AlarmsListener = {
         adapter.alarms = it
-    }
-
-    private fun showBottomSheetDialogAdd() {
-        BottomSheetFragment().show(childFragmentManager, "AddTag")
     }
 }

@@ -14,6 +14,7 @@
         app:layout_constraintStart_toStartOf="parent"/>
 
     <TextView
+        android:id="@+id/heading"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="Новый сигнал"
