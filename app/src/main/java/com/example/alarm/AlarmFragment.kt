@@ -15,6 +15,7 @@ import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
 import com.example.alarm.model.AlarmsListener
+import com.example.alarm.model.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,8 +33,10 @@ class AlarmFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
+        var settings: Settings = Settings(0)
+        uiScope.launch { settings = alarmsService.getSettings() }
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
-        adapter = AlarmsAdapter(object: AlarmActionListener {
+        adapter = AlarmsAdapter(settings , object: AlarmActionListener {
             override fun onAlarmEnabled(alarm: Alarm) {
                 uiScope.launch {
                     var bool = 0

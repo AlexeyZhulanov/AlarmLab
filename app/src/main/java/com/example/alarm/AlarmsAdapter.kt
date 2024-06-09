@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
+import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.ItemAlarmBinding
 import com.example.alarm.model.Alarm
+import com.example.alarm.model.Settings
 
 interface AlarmActionListener {
     fun onAlarmEnabled(alarm: Alarm)
@@ -16,6 +18,7 @@ interface AlarmActionListener {
 }
 
 class AlarmsAdapter(
+    private val settings: Settings,
     private val actionListener: AlarmActionListener
 ) : RecyclerView.Adapter<AlarmsAdapter.AlarmsViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
@@ -105,6 +108,13 @@ class AlarmsAdapter(
                 if (alarm.timeMinutes == 0) tm = "0"
                 val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}${tm}"
                 timeTextView.text = txt
+                var txt2: String = ""
+                txt2 += if(alarm.name != "default")
+                    "<font color='#FF00FF'>${alarm.name}</font>\n"
+                else
+                    //"раз в ${settings.interval} мин."
+                    "${alarm.name}123"
+                intervalTextView.text = Html.fromHtml(txt2, 0)
                 switch1.isChecked = alarm.enabled == 1
                 if (!canLongClick) {
                     checkBox.tag = alarm
