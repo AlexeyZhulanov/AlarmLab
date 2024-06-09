@@ -105,15 +105,15 @@ class AlarmsAdapter(
                 holder.itemView.tag = alarm
                 switch1.tag = alarm
                 var tm = ""
+                var tm2 = ""
                 if (alarm.timeMinutes == 0) tm = "0"
-                val txt: String = "${alarm.timeHours}:${alarm.timeMinutes}${tm}"
+                if(alarm.timeMinutes in 1..9) tm2 = "0"
+                val txt: String = "${alarm.timeHours}:${tm2}${alarm.timeMinutes}${tm}"
                 timeTextView.text = txt
                 var txt2: String = ""
                 txt2 += if(alarm.name != "default")
-                    "<font color='#FF00FF'>${alarm.name}</font>\n"
-                else
-                    //"раз в ${settings.interval} мин."
-                    "${alarm.name}123"
+                    "<font color='#FF00FF'>${alarm.name}</font>"
+                else "раз в ${settings.interval} минут"
                 intervalTextView.text = Html.fromHtml(txt2, 0)
                 switch1.isChecked = alarm.enabled == 1
                 if (!canLongClick) {

@@ -1,5 +1,6 @@
 package com.example.alarm.model
 
+import android.util.Log
 import com.example.alarm.room.AlarmDao
 import com.example.alarm.room.AlarmDbEntity
 import com.example.alarm.room.AlarmUpdateEnabledTuple
@@ -38,13 +39,12 @@ class AlarmService(
                         id = t?.id ?: throw Exception(),
                         timeHours = t.timeHours,
                         timeMinutes = t.timeMinutes,
+                        name = t.name,
                         enabled = t.enabled
                     )
                 )
             }
         }
-        else { alarms.add(Alarm(id = 0)) }
-
         return alarms
     }
 

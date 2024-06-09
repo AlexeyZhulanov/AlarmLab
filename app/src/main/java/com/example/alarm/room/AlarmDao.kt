@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlarmDao {
-    @Query("SELECT id, time_hours, time_minutes, enabled FROM alarms ORDER BY time_hours ASC, time_minutes ASC")
+    @Query("SELECT * FROM alarms ORDER BY time_hours ASC, time_minutes ASC")
     suspend fun selectAlarms(): List<AlarmsGetTuple?>
 
     @Insert

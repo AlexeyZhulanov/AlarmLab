@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,7 +16,7 @@ import kotlinx.coroutines.launch
 
 class BottomSheetFragment(
     private val isAdd: Boolean,
-    private val oldId: Long = 0
+    private val oldAlarm: Alarm
 ) : BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentBottomsheetBinding
@@ -28,10 +29,19 @@ class BottomSheetFragment(
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.timePicker.setIs24HourView(true)
-        if(!isAdd) binding.heading.text = "Изменить будильник"
+        if(isAdd) {
+            binding.timePicker.hour = 7
+            binding.timePicker.minute = 0
+        }
+        else {
+            binding.heading.text = "Изменить будильник"
+            binding.timePicker.hour = oldAlarm.timeHours
+            binding.timePicker.minute = oldAlarm.timeMinutes
+            if(oldAlarm.name != "default") binding.signalName.setText(oldAlarm.name)
+        }
         binding.confirmButton.setOnClickListener {
             if(isAdd) { addNewAlarm() }
-            else { changeAlarm(oldId) }
+            else { changeAlarm(oldAlarm.id) }
         }
         binding.cancelButton.setOnClickListener {
             dismiss()
@@ -48,7 +58,7 @@ class BottomSheetFragment(
             id = 0,
             timeHours = binding.timePicker.hour,
             timeMinutes = binding.timePicker.minute,
-            name = binding.signalName.text.toString(),
+            name = if(binding.signalName.text.toString() == "") "default" else binding.signalName.text.toString() ,
             enabled = 1
         )
         uiScope.launch {

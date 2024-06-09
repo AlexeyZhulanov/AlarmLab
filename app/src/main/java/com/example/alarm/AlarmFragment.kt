@@ -46,7 +46,7 @@ class AlarmFragment : Fragment() {
                 }
             }
             override fun onAlarmChange(alarm: Alarm) {
-                BottomSheetFragment(false, alarm.id).show(childFragmentManager, "ChangeTag")
+                BottomSheetFragment(false, alarm).show(childFragmentManager, "ChangeTag")
             }
 
             override fun onAlarmLongClicked() {
@@ -90,7 +90,7 @@ class AlarmFragment : Fragment() {
         (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
         binding.floatingActionButtonAdd.setOnClickListener {
-            BottomSheetFragment(true).show(childFragmentManager, "AddTag")
+            BottomSheetFragment(true, Alarm(0)).show(childFragmentManager, "AddTag")
         }
 
         return binding.root
