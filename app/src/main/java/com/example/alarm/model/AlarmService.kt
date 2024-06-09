@@ -22,6 +22,7 @@ class AlarmService(
     private val listeners = mutableSetOf<AlarmsListener>()
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.IO + job)
+    private var settings = Settings(0)
 
     init {
         uiScope.launch { alarms = getAlarms() }
@@ -87,7 +88,8 @@ class AlarmService(
     }
 
     suspend fun getSettings(): Settings {
-        return settingsDao.getSettings().toSettings()
+        settings = settingsDao.getSettings().toSettings()
+        return settings
     }
 
     suspend fun updateSettings(settings: Settings) {

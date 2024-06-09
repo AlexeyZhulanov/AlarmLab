@@ -39,11 +39,7 @@ class AlarmFragment : Fragment() {
                     var bool = 0
                     if(alarm.enabled == 0) bool = 1
                     alarmsService.updateEnabled(alarm.id, bool)
-                    Toast.makeText(
-                        requireContext(),
-                        "IsEnabled: $bool",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "IsEnabled: $bool", Toast.LENGTH_SHORT).show()
                 }
             }
             override fun onAlarmChange(alarm: Alarm) {

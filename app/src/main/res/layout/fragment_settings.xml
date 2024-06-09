@@ -113,29 +113,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Повторять сигнал"
-                android:fontFamily="casual"
-                android:gravity="center|start"
-                android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="10sp"
-                android:autoSizeMaxTextSize="100sp"
-                android:autoSizeStepGranularity="2sp"
-                android:textStyle="bold|italic"/>
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/switch_repeat"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            >
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
                 android:text="Количество повторов: "
                 android:fontFamily="casual"
                 android:layout_gravity="center"
@@ -152,15 +129,17 @@
                 android:orientation="horizontal"
                 >
                 <RadioButton
+                    android:id="@+id/repeats3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"
                     android:text="3"/>
                 <RadioButton
+                    android:id="@+id/repeats5"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5"/>
                 <RadioButton
+                    android:id="@+id/repeats_infinite"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Infinite"
@@ -174,6 +153,62 @@
                     android:textStyle="bold|italic"/>
             </RadioGroup>
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Интервал раз в "
+                android:fontFamily="casual"
+                android:layout_gravity="center"
+                android:gravity="center|start"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="10sp"
+                android:autoSizeMaxTextSize="100sp"
+                android:autoSizeStepGranularity="2sp"
+                android:textStyle="bold|italic"/>
+            <RadioGroup
+                android:id="@+id/interval_radio_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="horizontal"
+                >
+                <RadioButton
+                    android:id="@+id/interval3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3"/>
+                <RadioButton
+                    android:id="@+id/interval5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="5"/>
+                <RadioButton
+                    android:id="@+id/interval10"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10" />
+            </RadioGroup>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="минут"
+                android:layout_marginStart="20dp"
+                android:fontFamily="casual"
+                android:layout_gravity="center"
+                android:gravity="center|end"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="10sp"
+                android:autoSizeMaxTextSize="100sp"
+                android:autoSizeStepGranularity="2sp"
+                android:textStyle="bold|italic"/>
+        </LinearLayout>
+
     </LinearLayout>
 
 

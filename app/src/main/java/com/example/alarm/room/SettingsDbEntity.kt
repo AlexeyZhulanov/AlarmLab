@@ -31,7 +31,7 @@ data class SettingsDbEntity(
 
     companion object {
         fun fromUserInput(settings: Settings): SettingsDbEntity = SettingsDbEntity(
-            id = 0,
+            id = settings.id,
             melody = settings.melody,
             vibration = settings.vibration,
             interval = settings.interval,

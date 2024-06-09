@@ -10,6 +10,6 @@ interface SettingsDao {
     @Query("SELECT * FROM settings")
     suspend fun getSettings(): SettingsDbEntity
 
-    @Update(entity = SettingsDbEntity::class)
+    @Update
     suspend fun updateSettings(settingsDbEntity: SettingsDbEntity)
 }
