@@ -51,6 +51,7 @@ class AlarmsAdapter(
                     } else {
                         checkedPositions.add(i)
                     }
+                    break
                 }
             }
     }
@@ -62,7 +63,10 @@ class AlarmsAdapter(
             R.id.switch1 -> {
                 if(canLongClick) {
                     for (i in alarms.indices) {
-                        if(alarms[i] == alarm) index = i
+                        if(alarms[i] == alarm) {
+                            index = i
+                            break
+                        }
                     }
                     actionListener.onAlarmEnabled(alarm, index)
                 }

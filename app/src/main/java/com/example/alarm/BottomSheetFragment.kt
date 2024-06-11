@@ -1,13 +1,13 @@
 package com.example.alarm
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.example.alarm.databinding.FragmentBottomsheetBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
+import com.example.alarm.model.MyAlarmManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,11 +37,11 @@ class BottomSheetFragment(
             binding.heading.text = "Изменить будильник"
             binding.timePicker.hour = oldAlarm.timeHours
             binding.timePicker.minute = oldAlarm.timeMinutes
-            if(oldAlarm.name != "default") binding.signalName.setText(oldAlarm.name)
+            if((oldAlarm.name != "default") && (oldAlarm.name != "")) binding.signalName.setText(oldAlarm.name)
         }
         binding.confirmButton.setOnClickListener {
             if(isAdd) { addNewAlarm() }
-            else { changeAlarm(oldAlarm.id) }
+            else { changeAlarm(oldAlarm) }
         }
         binding.cancelButton.setOnClickListener {
             dismiss()
@@ -63,19 +63,21 @@ class BottomSheetFragment(
         )
         uiScope.launch {
             alarmsService.addAlarm(alarm)
+            MyAlarmManager(context, alarm).startProcess()
             dismiss()
         }
     }
-    private fun changeAlarm(oldId: Long) {
+    private fun changeAlarm(oldAlarm: Alarm) {
         val alarmNew = Alarm(
-            id = oldId,
+            id = oldAlarm.id,
             timeHours = binding.timePicker.hour,
             timeMinutes = binding.timePicker.minute,
-            name = binding.signalName.text.toString(),
-            enabled = 1
+            name = if(binding.signalName.text.toString() == "") "default" else binding.signalName.text.toString(),
+            enabled = oldAlarm.enabled
         )
         uiScope.launch {
             alarmsService.updateAlarm(alarmNew)
+            if(oldAlarm.enabled == 1) MyAlarmManager(context, alarmNew).restartProcess()
             dismiss()
         }
     }
