@@ -12,7 +12,7 @@ import com.example.alarm.model.Alarm
 import com.example.alarm.model.Settings
 
 interface AlarmActionListener {
-    fun onAlarmEnabled(alarm: Alarm)
+    fun onAlarmEnabled(alarm: Alarm, index: Int)
     fun onAlarmChange(alarm: Alarm)
     fun onAlarmLongClicked()
 }
@@ -31,6 +31,7 @@ class AlarmsAdapter(
 
     var canLongClick: Boolean = true
     private var checkedPositions: MutableSet<Int> = mutableSetOf()
+    private var index = 0
 
     fun getDeleteList(): List<Alarm> {
         val list = mutableListOf<Alarm>()
@@ -60,8 +61,10 @@ class AlarmsAdapter(
         when(v.id) {
             R.id.switch1 -> {
                 if(canLongClick) {
-                    actionListener.onAlarmEnabled(alarm)
-                    //notifyDataSetChanged()
+                    for (i in alarms.indices) {
+                        if(alarms[i] == alarm) index = i
+                    }
+                    actionListener.onAlarmEnabled(alarm, index)
                 }
             }
             R.id.checkBox -> {

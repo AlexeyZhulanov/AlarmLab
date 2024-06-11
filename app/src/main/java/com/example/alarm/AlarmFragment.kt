@@ -49,7 +49,7 @@ class AlarmFragment : Fragment() {
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
         adapter = AlarmsAdapter(settings , object: AlarmActionListener {
             @SuppressLint("ScheduleExactAlarm", "NotifyDataSetChanged")
-            override fun onAlarmEnabled(alarm: Alarm) {
+            override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                 uiScope.launch {
                     Log.d("test0", "is works")
                     var bool = 0
@@ -75,7 +75,7 @@ class AlarmFragment : Fragment() {
                         Toast.makeText(requireContext(), "NO NO NO", Toast.LENGTH_SHORT).show()
                     }
                     alarmsService.updateEnabled(alarm.id, bool)
-                    adapter.notifyDataSetChanged()
+                    adapter.notifyItemChanged(index)
                 }
             }
             override fun onAlarmChange(alarm: Alarm) {
