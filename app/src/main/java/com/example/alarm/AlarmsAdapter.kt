@@ -59,7 +59,10 @@ class AlarmsAdapter(
         val alarm = v.tag as Alarm
         when(v.id) {
             R.id.switch1 -> {
-                if(canLongClick) actionListener.onAlarmEnabled(alarm)
+                if(canLongClick) {
+                    actionListener.onAlarmEnabled(alarm)
+                    //notifyDataSetChanged()
+                }
             }
             R.id.checkBox -> {
                 if(!canLongClick) {

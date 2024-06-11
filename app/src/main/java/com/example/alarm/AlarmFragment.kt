@@ -1,6 +1,11 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.icu.util.Calendar
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -25,24 +30,52 @@ import kotlinx.coroutines.launch
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
+    private var alarmManager: AlarmManager? = null
+    private lateinit var alarmIntent: PendingIntent
+    private val calendar = Calendar.getInstance()
 
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
 
+
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
+        alarmManager = requireActivity().getSystemService(Context.ALARM_SERVICE) as AlarmManager
         var settings: Settings = Settings(0)
         uiScope.launch { settings = alarmsService.getSettings() }
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
         adapter = AlarmsAdapter(settings , object: AlarmActionListener {
+            @SuppressLint("ScheduleExactAlarm", "NotifyDataSetChanged")
             override fun onAlarmEnabled(alarm: Alarm) {
                 uiScope.launch {
+                    Log.d("test0", "is works")
                     var bool = 0
-                    if(alarm.enabled == 0) bool = 1
+//                    alarmIntent = Intent(context, AlarmReceiver::class.java).let {intent ->
+//                        intent.putExtra("alarmName", alarm.name)
+//                        PendingIntent.getBroadcast(context, alarm.id.toInt(), intent, PendingIntent.FLAG_IMMUTABLE)
+//                    }
+                    if(alarm.enabled == 0) { //turn on
+                        bool = 1
+                        Log.d("test05", "is works")
+//                        calendar.set(Calendar.HOUR_OF_DAY, alarm.timeHours)
+//                        calendar.set(Calendar.MINUTE, alarm.timeMinutes)
+//                        calendar.set(Calendar.SECOND, 0)
+//                        alarmManager?.setExact(
+//                            AlarmManager.RTC_WAKEUP,
+//                            calendar.timeInMillis,
+//                            alarmIntent
+//                        )
+                        Log.d("test1", "is works")
+                        Toast.makeText(requireContext(), "YES SIR", Toast.LENGTH_SHORT).show()
+                    }
+                    else {
+                        Toast.makeText(requireContext(), "NO NO NO", Toast.LENGTH_SHORT).show()
+                    }
                     alarmsService.updateEnabled(alarm.id, bool)
-                    Toast.makeText(requireContext(), "IsEnabled: $bool", Toast.LENGTH_SHORT).show()
+                    adapter.notifyDataSetChanged()
                 }
             }
             override fun onAlarmChange(alarm: Alarm) {
