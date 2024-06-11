@@ -1,5 +1,6 @@
 package com.example.alarm.model
 
+import android.content.Context
 import android.util.Log
 import com.example.alarm.room.AlarmDao
 import com.example.alarm.room.AlarmDbEntity
@@ -12,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 typealias AlarmsListener = (alarms: List<Alarm>) -> Unit
@@ -29,7 +31,7 @@ class AlarmService(
         uiScope.launch { alarms = getAlarms() }
     }
 
-    override suspend fun getAlarms(): MutableList<Alarm> {
+    override suspend fun getAlarms(): MutableList<Alarm> = withContext(Dispatchers.IO) {
         alarms.clear()
         val tuple = alarmDao.selectAlarms()
         if (tuple.isNotEmpty()) {
@@ -45,22 +47,22 @@ class AlarmService(
                 )
             }
         }
-        return alarms
+        return@withContext alarms
     }
 
-    override suspend fun addAlarm(alarm: Alarm) {
+    override suspend fun addAlarm(alarm: Alarm) = withContext(Dispatchers.IO) {
         alarmDao.addAlarm(AlarmDbEntity.fromUserInput(alarm))
         alarms = getAlarms()
         notifyChanges()
     }
 
-    override suspend fun updateAlarm(alarm: Alarm) {
+    override suspend fun updateAlarm(alarm: Alarm) = withContext(Dispatchers.IO) {
         alarmDao.updateAlarm(AlarmDbEntity.fromUserInput(alarm))
         alarms = getAlarms()
         notifyChanges()
     }
 
-    override suspend fun updateEnabled(id: Long, enabled: Int) {
+    override suspend fun updateEnabled(id: Long, enabled: Int) = withContext(Dispatchers.IO) {
         alarmDao.updateEnabled(AlarmUpdateEnabledTuple(id, enabled))
         alarms = getAlarms()
     }
@@ -69,7 +71,7 @@ class AlarmService(
         return alarmDao.getById(id).map { it?.toAlarm() }
     }
 
-    override suspend fun deleteAlarms(list: List<Alarm>) {
+    override suspend fun deleteAlarms(list: List<Alarm>) = withContext(Dispatchers.IO) {
         for(l in list) {
             alarmDao.deleteAlarm(AlarmDbEntity.fromUserInput(l))
         }
@@ -77,22 +79,23 @@ class AlarmService(
         notifyChanges()
     }
 
-    suspend fun offAlarms() {
+    suspend fun offAlarms(context: Context) = withContext(Dispatchers.IO) {
         for(alarm in alarms) {
             if (alarm.enabled == 1) {
                 alarmDao.updateEnabled(AlarmUpdateEnabledTuple(alarm.id, 0))
+                MyAlarmManager(context, alarm).endProcess()
             }
         }
         alarms = getAlarms()
         notifyChanges()
     }
 
-    suspend fun getSettings(): Settings {
+    suspend fun getSettings(): Settings = withContext(Dispatchers.IO) {
         settings = settingsDao.getSettings().toSettings()
-        return settings
+        return@withContext settings
     }
 
-    suspend fun updateSettings(settings: Settings) {
+    suspend fun updateSettings(settings: Settings) = withContext(Dispatchers.IO) {
         settingsDao.updateSettings(SettingsDbEntity.fromUserInput(settings))
     }
 

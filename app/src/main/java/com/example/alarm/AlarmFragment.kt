@@ -1,17 +1,10 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Context
-import android.content.Intent
-import android.icu.util.Calendar
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -27,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
@@ -37,15 +29,12 @@ class AlarmFragment : Fragment() {
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
 
-
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
         var settings: Settings = Settings(0)
         uiScope.launch { settings = alarmsService.getSettings() }
         val binding = FragmentAlarmBinding.inflate(inflater, container, false)
         adapter = AlarmsAdapter(settings , object: AlarmActionListener {
-            @SuppressLint("ScheduleExactAlarm", "NotifyDataSetChanged")
             override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                 uiScope.launch {
                     var bool = 0

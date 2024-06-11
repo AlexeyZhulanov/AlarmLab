@@ -7,7 +7,6 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.replace
 import com.example.alarm.databinding.ActivityMainBinding
 import com.example.alarm.model.AlarmService
 import kotlinx.coroutines.CoroutineScope
@@ -68,7 +67,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.off_alarms -> {
-                uiScope.launch { alarmsService.offAlarms() }
+                uiScope.launch { alarmsService.offAlarms(applicationContext) }
                 true
             }
             else -> super.onOptionsItemSelected(item)

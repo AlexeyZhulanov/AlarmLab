@@ -54,6 +54,7 @@ class BottomSheetFragment(
     }
 
     private fun addNewAlarm() {
+        uiScope.launch {
         val alarm = Alarm(
             id = 0,
             timeHours = binding.timePicker.hour,
@@ -61,13 +62,13 @@ class BottomSheetFragment(
             name = if(binding.signalName.text.toString() == "") "default" else binding.signalName.text.toString() ,
             enabled = 1
         )
-        uiScope.launch {
             alarmsService.addAlarm(alarm)
             MyAlarmManager(context, alarm).startProcess()
             dismiss()
         }
     }
     private fun changeAlarm(oldAlarm: Alarm) {
+        uiScope.launch {
         val alarmNew = Alarm(
             id = oldAlarm.id,
             timeHours = binding.timePicker.hour,
@@ -75,7 +76,6 @@ class BottomSheetFragment(
             name = if(binding.signalName.text.toString() == "") "default" else binding.signalName.text.toString(),
             enabled = oldAlarm.enabled
         )
-        uiScope.launch {
             alarmsService.updateAlarm(alarmNew)
             if(oldAlarm.enabled == 1) MyAlarmManager(context, alarmNew).restartProcess()
             dismiss()

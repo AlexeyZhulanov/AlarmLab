@@ -6,35 +6,41 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import android.icu.util.ULocale
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import com.example.alarm.AlarmReceiver
-import kotlin.math.abs
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MyAlarmManager(
     private val context: Context?,
     val alarm: Alarm
 ) {
     private var alarmManager: AlarmManager? = null
-    private var alarmIntent: PendingIntent
+    private lateinit var alarmIntent: PendingIntent
     private val calendar = Calendar.getInstance()
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Default + job)
 
     init {
-        alarmManager = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
-            intent.putExtra("alarmName", alarm.name)
-            PendingIntent.getBroadcast(
-                context,
-                alarm.id.toInt(),
-                intent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
+        uiScope.launch {
+            alarmManager = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
+                intent.putExtra("alarmName", alarm.name)
+                PendingIntent.getBroadcast(
+                    context,
+                    alarm.id.toInt(),
+                    intent,
+                    PendingIntent.FLAG_IMMUTABLE
+                )
+            }
         }
     }
 
-    fun startProcess() {
+    suspend fun startProcess() = withContext(Dispatchers.Default) {
         calendar.set(Calendar.HOUR_OF_DAY, alarm.timeHours)
         calendar.set(Calendar.MINUTE, alarm.timeMinutes)
         calendar.set(Calendar.SECOND, 0)
@@ -62,17 +68,17 @@ class MyAlarmManager(
         Toast.makeText(context, str, Toast.LENGTH_SHORT).show()
     }
 
-    fun endProcess() {
+    suspend fun endProcess() = withContext(Dispatchers.Default) {
         alarmManager?.cancel(alarmIntent)
     }
 
-    fun restartProcess() {
+    suspend fun restartProcess() = withContext(Dispatchers.Default) {
         endProcess()
         startProcess()
     }
-
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    fun endAllProcesses() {
-        alarmManager?.cancelAll()
+    suspend fun onRepeatPressed(settings: Settings) = withContext(Dispatchers.Default) {
+        val calendar = Calendar.getInstance(ULocale.ROOT)
+        val time = calendar.timeInMillis + settings.interval.toLong()
+        alarmManager?.setAlarmClock(AlarmManager.AlarmClockInfo(time, alarmIntent), alarmIntent)
     }
 }
