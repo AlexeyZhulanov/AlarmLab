@@ -74,6 +74,8 @@ dependencies {
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("androidx.fragment:fragment-ktx:1.7.1")
     implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("pl.bclogic:pulsator4droid:1.0.3")
+    implementation("com.ncorti:slidetoact:0.11.0")
     kapt("androidx.room:room-compiler:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     testImplementation("junit:junit:4.13.2")
