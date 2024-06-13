@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             R.id.open_settings -> {
                 supportFragmentManager
                     .beginTransaction()
-                    .replace(R.id.fragmentContainer, SignalFragment()) //need to get back
+                    .replace(R.id.fragmentContainer, SignalFragment("default", 0)) //need to get back
                     .addToBackStack("settings")
                     .commit()
                 true

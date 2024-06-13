@@ -31,6 +31,7 @@ class MyAlarmManager(
             alarmManager = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
                 intent.putExtra("alarmName", alarm.name)
+                intent.putExtra("alarmId", alarm.id)
                 PendingIntent.getBroadcast(
                     context,
                     alarm.id.toInt(),
@@ -83,7 +84,7 @@ class MyAlarmManager(
         endProcess()
         startProcess()
     }
-    suspend fun onRepeatPressed(settings: Settings) = withContext(Dispatchers.Default) {
+    suspend fun repeatProcess(settings: Settings) = withContext(Dispatchers.Default) {
         val calendar = Calendar.getInstance(ULocale.ROOT)
         val time = calendar.timeInMillis + settings.interval.toLong()
         alarmManager?.setAlarmClock(AlarmManager.AlarmClockInfo(time, alarmIntent), alarmIntent)

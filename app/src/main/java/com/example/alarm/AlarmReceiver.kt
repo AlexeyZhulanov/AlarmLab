@@ -11,6 +11,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         val name = intent.getStringExtra("alarmName")
+        val id = intent.getIntExtra("alarmId", 0)
         Log.d("testWork", "Alarm name is $name")
         // in this should be signal fragment replace
     }
