@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -61,7 +62,7 @@ class MainActivity : AppCompatActivity() {
             R.id.open_settings -> {
                 supportFragmentManager
                     .beginTransaction()
-                    .replace(R.id.fragmentContainer, SignalFragment("default", 0)) //need to get back
+                    .replace(R.id.fragmentContainer, SettingsFragment())
                     .addToBackStack("settings")
                     .commit()
                 true
@@ -72,5 +73,26 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    fun showSignalFragment(name: String, id: Long) {
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.fragmentContainer, SignalFragment(name, id))
+            .addToBackStack("signal")
+            .commit()
+    }
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
+            SignalFragment("",0).dropFragment()
+        }
+        return true;
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
+            SignalFragment("",0).dropFragment()
+        }
+        return true;
     }
 }

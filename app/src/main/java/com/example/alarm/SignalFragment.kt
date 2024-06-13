@@ -48,16 +48,21 @@ class SignalFragment(
 //                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
 //                requireActivity().onBackPressedDispatcher.onBackPressed()
 //            }
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+            dropFragment()
         }
         binding.slideButton.onSlideCompleteListener = object : SlideToActView.OnSlideCompleteListener {
             override fun onSlideComplete(view: SlideToActView) {
 //                uiScope.launch { MyAlarmManager(context, alarmPlug).endProcess() }
-//                childFragmentManager.popBackStack() //need to test
-                requireActivity().onBackPressedDispatcher.onBackPressed()
+//                dropFragment()
+
             }
         }
+
         return binding.root
+    }
+
+    fun dropFragment() {
+        requireActivity().onBackPressedDispatcher.onBackPressed()
     }
 
     override fun onDestroyView() {
