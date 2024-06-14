@@ -14,9 +14,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
+interface BottomSheetListener {
+    fun onAddAlarm(alarm: Alarm)
+    fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm)
+}
+
 class BottomSheetFragment(
     private val isAdd: Boolean,
-    private val oldAlarm: Alarm
+    private val oldAlarm: Alarm,
+    private val bottomSheetListener: BottomSheetListener
 ) : BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentBottomsheetBinding
@@ -64,6 +70,7 @@ class BottomSheetFragment(
         uiScope.launch {
             alarmsService.addAlarm(alarm)
             MyAlarmManager(context, alarm).startProcess()
+            bottomSheetListener.onAddAlarm(alarm)
             dismiss()
         }
     }
@@ -78,6 +85,7 @@ class BottomSheetFragment(
         uiScope.launch {
             alarmsService.updateAlarm(alarmNew)
             if (oldAlarm.enabled == 1) MyAlarmManager(context, alarmNew).restartProcess()
+            bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew)
             dismiss()
         }
     }

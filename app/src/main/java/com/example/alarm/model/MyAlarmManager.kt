@@ -78,7 +78,7 @@ class MyAlarmManager(
         alarmManager?.cancel(alarmIntent)
     }
 
-    suspend fun restartProcess() = withContext(Dispatchers.Default) {
+    suspend fun restartProcess() = withContext(Dispatchers.Main + job) {
         endProcess()
         startProcess()
     }

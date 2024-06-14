@@ -52,12 +52,11 @@ class AlarmFragment : Fragment() {
                             MyAlarmManager(context, alarm).startProcess()
                             changeAlarmTime(alarm, false)
                             binding.barTextView.text = updateBar()
-                            Log.d("testUpdate", "successfully updated")
                         } else {
                             MyAlarmManager(context, alarm).endProcess()
                             changeAlarmTime(alarm, true)
                             binding.barTextView.text = updateBar()
-                            Log.d("testUpdate", "successfully updated")
+                            Log.d("testDisable", millisToAlarm.toString())
                         }
                         alarmsService.updateEnabled(alarm.id, bool)
                         adapter.notifyItemChanged(index)
@@ -65,7 +64,16 @@ class AlarmFragment : Fragment() {
                 }
 
                 override fun onAlarmChange(alarm: Alarm) {
-                    BottomSheetFragment(false, alarm).show(childFragmentManager, "ChangeTag")
+                    BottomSheetFragment(false, alarm, object : BottomSheetListener {
+                        override fun onAddAlarm(alarm: Alarm) { return }
+                        override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) {
+                            if(alarmNew.enabled == 1) {
+                                changeAlarmTime(alarmOld, true)
+                                changeAlarmTime(alarmNew, false)
+                                binding.barTextView.text = updateBar()
+                            }
+                        }
+                    }).show(childFragmentManager, "ChangeTag")
                 }
 
                 override fun onAlarmLongClicked() {
@@ -95,10 +103,15 @@ class AlarmFragment : Fragment() {
                     binding.floatingActionButtonDelete.setOnClickListener {
                         val alarmsToDelete = adapter.getDeleteList()
                         if (alarmsToDelete.isNotEmpty()) {
-                            uiScope.launch { alarmsService.deleteAlarms(alarmsToDelete, context) }
+                            uiScope.launch {
+                                alarmsService.deleteAlarms(alarmsToDelete, context)
+                                millisToAlarm = fillAlarmsTime()
+                            }
+                            binding.barTextView.text = updateBar()
                             binding.floatingActionButtonDelete.visibility = View.GONE
                             binding.floatingActionButtonAdd.visibility = View.VISIBLE
                             adapter.clearPositions()
+
                         }
                     }
                 }
@@ -119,7 +132,29 @@ class AlarmFragment : Fragment() {
         (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
         binding.floatingActionButtonAdd.setOnClickListener {
-            BottomSheetFragment(true, Alarm(0)).show(childFragmentManager, "AddTag")
+            BottomSheetFragment(true, Alarm(0), object : BottomSheetListener {
+                override fun onAddAlarm(alarm: Alarm) {
+                    uiScope.launch {
+                        var id: Long = 3333
+                        for (a in alarmsService.getAlarms()) {
+                            if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) id =
+                                a.id
+                            break
+                        }
+                        val alr = Alarm(
+                            id = id,
+                            timeHours = alarm.timeHours,
+                            timeMinutes = alarm.timeMinutes,
+                            name = alarm.name,
+                            enabled = alarm.enabled
+                        )
+                        changeAlarmTime(alr, false)
+                        binding.barTextView.text = updateBar()
+                    }
+                }
+
+                override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) { return }
+            }).show(childFragmentManager, "AddTag")
         }
 
         return binding.root
@@ -154,6 +189,7 @@ class AlarmFragment : Fragment() {
 
     private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
         if(isDisable) {
+            Log.d("testAlarmIdRemove", alarm.id.toString())
             millisToAlarm.remove(alarm.id)
         }
         else {
@@ -166,6 +202,7 @@ class AlarmFragment : Fragment() {
                 calendar.timeInMillis + 86400000
             } else calendar.timeInMillis
             millisToAlarm[alarm.id] = longTime
+            Log.d("testAlarmId", alarm.id.toString())
             millisToAlarm = millisToAlarm.toList().sortedBy { it.second }.toMap().toMutableMap()
         }
     }
