@@ -46,18 +46,18 @@ class SignalFragment(
         binding.pulsator.start()
         flagVisible = true
         binding.repeatButton.setOnClickListener {
-//            uiScope.launch {
-//                MyAlarmManager(context, alarmPlug).endProcess()
-//                val settings = alarmsService.getSettings()
-//                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
-//                requireActivity().onBackPressedDispatcher.onBackPressed()
-//            }
+            uiScope.launch {
+                MyAlarmManager(context, alarmPlug).endProcess()
+                val settings = alarmsService.getSettings()
+                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
         binding.slideButton.onSlideCompleteListener = object : SlideToActView.OnSlideCompleteListener {
             override fun onSlideComplete(view: SlideToActView) {
-//                uiScope.launch { MyAlarmManager(context, alarmPlug).endProcess() }
-//                requireActivity().onBackPressedDispatcher.onBackPressed()
+                uiScope.launch { MyAlarmManager(context, alarmPlug).endProcess() }
+                requireActivity().onBackPressedDispatcher.onBackPressed()
 
             }
         }

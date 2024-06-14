@@ -56,7 +56,6 @@ class AlarmFragment : Fragment() {
                             MyAlarmManager(context, alarm).endProcess()
                             changeAlarmTime(alarm, true)
                             binding.barTextView.text = updateBar()
-                            Log.d("testDisable", millisToAlarm.toString())
                         }
                         alarmsService.updateEnabled(alarm.id, bool)
                         adapter.notifyItemChanged(index)
@@ -105,9 +104,11 @@ class AlarmFragment : Fragment() {
                         if (alarmsToDelete.isNotEmpty()) {
                             uiScope.launch {
                                 alarmsService.deleteAlarms(alarmsToDelete, context)
-                                millisToAlarm = fillAlarmsTime()
+                                for(a in alarmsToDelete) {
+                                    if(a.enabled == 1) changeAlarmTime(a, true)
+                                }
+                                binding.barTextView.text = updateBar()
                             }
-                            binding.barTextView.text = updateBar()
                             binding.floatingActionButtonDelete.visibility = View.GONE
                             binding.floatingActionButtonAdd.visibility = View.VISIBLE
                             adapter.clearPositions()
@@ -123,7 +124,6 @@ class AlarmFragment : Fragment() {
             millisToAlarm = fillAlarmsTime()
             while (true) {
                 binding.barTextView.text = updateBar()
-                Log.d("testUpdate", "successfully updated")
                 delay(30000)
             }
         }
@@ -135,11 +135,12 @@ class AlarmFragment : Fragment() {
             BottomSheetFragment(true, Alarm(0), object : BottomSheetListener {
                 override fun onAddAlarm(alarm: Alarm) {
                     uiScope.launch {
-                        var id: Long = 3333
-                        for (a in alarmsService.getAlarms()) {
-                            if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) id =
-                                a.id
-                            break
+                        var id: Long = 0
+                        for (a in adapter.alarms) {
+                            if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) {
+                                id = a.id
+                                break
+                            }
                         }
                         val alr = Alarm(
                             id = id,
@@ -189,7 +190,6 @@ class AlarmFragment : Fragment() {
 
     private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
         if(isDisable) {
-            Log.d("testAlarmIdRemove", alarm.id.toString())
             millisToAlarm.remove(alarm.id)
         }
         else {
@@ -202,7 +202,6 @@ class AlarmFragment : Fragment() {
                 calendar.timeInMillis + 86400000
             } else calendar.timeInMillis
             millisToAlarm[alarm.id] = longTime
-            Log.d("testAlarmId", alarm.id.toString())
             millisToAlarm = millisToAlarm.toList().sortedBy { it.second }.toMap().toMutableMap()
         }
     }
@@ -216,7 +215,7 @@ class AlarmFragment : Fragment() {
                 ((longTime - calendar.timeInMillis) / 60000).toInt()
             } else ((longTime - calendar.timeInMillis) / 60000).toInt()
             when(minutes) {
-                0 -> txt += "Сработает менее чем\nчерез 1 мин."
+                0 -> txt += "Сработает менее чем через 1 мин."
                 in 1..59 -> txt += "Сработает через\n$minutes мин."
                 else -> {
                     val hours = minutes / 60

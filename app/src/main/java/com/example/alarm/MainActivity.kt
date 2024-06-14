@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -15,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SignalStart {
 
     private lateinit var binding: ActivityMainBinding
 
@@ -74,14 +75,6 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-
-    fun showSignalFragment(name: String, id: Long) {
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.fragmentContainer, SignalFragment(name, id))
-            .addToBackStack("signal")
-            .commit()
-    }
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         if(SignalFragment("",0).flagVisible) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
@@ -104,5 +97,13 @@ class MainActivity : AppCompatActivity() {
             super.onKeyDown(keyCode, event)
         }
         return true;
+    }
+    override fun onAlarmTriggered(name: String?, id: Long) {
+        Log.d("testWork2", "YESYES")
+        supportFragmentManager
+            .beginTransaction()
+            .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
+            .addToBackStack("signal")
+            .commit()
     }
 }
