@@ -83,15 +83,25 @@ class MainActivity : AppCompatActivity() {
             .commit()
     }
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP){
-            SignalFragment("",0).dropFragment()
+        if(SignalFragment("",0).flagVisible) {
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                SignalFragment("", 0).dropAndRepeatFragment()
+            }
+        }
+        else {
+            super.onKeyUp(keyCode, event)
         }
         return true;
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN){
-            SignalFragment("",0).dropFragment()
+        if(SignalFragment("",0).flagVisible) {
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                SignalFragment("", 0).dropAndRepeatFragment()
+            }
+        }
+        else {
+            super.onKeyDown(keyCode, event)
         }
         return true;
     }

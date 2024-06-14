@@ -10,10 +10,12 @@ import androidx.fragment.app.Fragment
 import com.example.alarm.databinding.FragmentSignalBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
+import com.example.alarm.model.MyAlarmManager
 import com.ncorti.slidetoact.SlideToActView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 
 class SignalFragment(
@@ -21,6 +23,7 @@ class SignalFragment(
     val id: Long
 ) : Fragment() {
 
+    var flagVisible: Boolean = false
     private val alarmPlug = Alarm(id = id, name = name)
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
@@ -41,6 +44,7 @@ class SignalFragment(
         mediaPlayer.isLooping = true
         mediaPlayer.start()
         binding.pulsator.start()
+        flagVisible = true
         binding.repeatButton.setOnClickListener {
 //            uiScope.launch {
 //                MyAlarmManager(context, alarmPlug).endProcess()
@@ -48,12 +52,12 @@ class SignalFragment(
 //                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
 //                requireActivity().onBackPressedDispatcher.onBackPressed()
 //            }
-            dropFragment()
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
         binding.slideButton.onSlideCompleteListener = object : SlideToActView.OnSlideCompleteListener {
             override fun onSlideComplete(view: SlideToActView) {
 //                uiScope.launch { MyAlarmManager(context, alarmPlug).endProcess() }
-//                dropFragment()
+//                requireActivity().onBackPressedDispatcher.onBackPressed()
 
             }
         }
@@ -61,12 +65,18 @@ class SignalFragment(
         return binding.root
     }
 
-    fun dropFragment() {
-        requireActivity().onBackPressedDispatcher.onBackPressed()
+    fun dropAndRepeatFragment() {
+        uiScope.launch {
+                MyAlarmManager(context, alarmPlug).endProcess()
+                val settings = alarmsService.getSettings()
+                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
+                requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         mediaPlayer.stop()
+        flagVisible = false
     }
 }

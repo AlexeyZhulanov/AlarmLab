@@ -71,8 +71,9 @@ class AlarmService(
         return alarmDao.getById(id).map { it?.toAlarm() }
     }
 
-    override suspend fun deleteAlarms(list: List<Alarm>) = withContext(Dispatchers.IO) {
+    override suspend fun deleteAlarms(list: List<Alarm>, context: Context?) = withContext(Dispatchers.IO) {
         for(l in list) {
+            if(l.enabled == 1) MyAlarmManager(context, l).endProcess()
             alarmDao.deleteAlarm(AlarmDbEntity.fromUserInput(l))
         }
         alarms = getAlarms()

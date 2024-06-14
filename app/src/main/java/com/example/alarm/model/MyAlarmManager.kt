@@ -55,10 +55,8 @@ class MyAlarmManager(
                 AlarmManager.AlarmClockInfo(longTime, alarmIntent),
                 alarmIntent
             )
-            Log.d("test", longTime.toString())
 
-            var minutes: Int = 0
-            minutes = if (calendar2.timeInMillis > calendar.timeInMillis) {
+            val minutes: Int = if (calendar2.timeInMillis > calendar.timeInMillis) {
                 ((longTime - calendar2.timeInMillis) / 60000).toInt()
             } else ((calendar.timeInMillis - calendar2.timeInMillis) / 60000).toInt()
             var str = ""

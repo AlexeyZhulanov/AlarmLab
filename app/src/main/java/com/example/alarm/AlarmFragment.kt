@@ -1,12 +1,16 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
+import android.icu.util.Calendar
+import android.icu.util.ULocale
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.toMutableStateMap
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.alarm.databinding.FragmentAlarmBinding
@@ -19,7 +23,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AlarmFragment : Fragment() {
 
@@ -29,6 +35,8 @@ class AlarmFragment : Fragment() {
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
+
+    private var millisToAlarm = mutableMapOf<Long, Long>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
             Repositories.init(requireActivity().applicationContext)
@@ -42,8 +50,14 @@ class AlarmFragment : Fragment() {
                         if (alarm.enabled == 0) { //turn on
                             bool = 1
                             MyAlarmManager(context, alarm).startProcess()
+                            changeAlarmTime(alarm, false)
+                            binding.barTextView.text = updateBar()
+                            Log.d("testUpdate", "successfully updated")
                         } else {
                             MyAlarmManager(context, alarm).endProcess()
+                            changeAlarmTime(alarm, true)
+                            binding.barTextView.text = updateBar()
+                            Log.d("testUpdate", "successfully updated")
                         }
                         alarmsService.updateEnabled(alarm.id, bool)
                         adapter.notifyItemChanged(index)
@@ -81,7 +95,7 @@ class AlarmFragment : Fragment() {
                     binding.floatingActionButtonDelete.setOnClickListener {
                         val alarmsToDelete = adapter.getDeleteList()
                         if (alarmsToDelete.isNotEmpty()) {
-                            uiScope.launch { alarmsService.deleteAlarms(alarmsToDelete) }
+                            uiScope.launch { alarmsService.deleteAlarms(alarmsToDelete, context) }
                             binding.floatingActionButtonDelete.visibility = View.GONE
                             binding.floatingActionButtonAdd.visibility = View.VISIBLE
                             adapter.clearPositions()
@@ -89,16 +103,24 @@ class AlarmFragment : Fragment() {
                     }
                 }
             })
-            val layoutManager = LinearLayoutManager(requireContext())
-            binding.recyclerview.layoutManager = layoutManager
-            binding.recyclerview.adapter = adapter
-
-            alarmsService.addListener(alarmsListener)
-            (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
-
-            binding.floatingActionButtonAdd.setOnClickListener {
-                BottomSheetFragment(true, Alarm(0)).show(childFragmentManager, "AddTag")
+        val layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerview.layoutManager = layoutManager
+        binding.recyclerview.adapter = adapter
+        uiScope.launch {
+            millisToAlarm = fillAlarmsTime()
+            while (true) {
+                binding.barTextView.text = updateBar()
+                Log.d("testUpdate", "successfully updated")
+                delay(30000)
             }
+        }
+
+        alarmsService.addListener(alarmsListener)
+        (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
+
+        binding.floatingActionButtonAdd.setOnClickListener {
+            BottomSheetFragment(true, Alarm(0)).show(childFragmentManager, "AddTag")
+        }
 
         return binding.root
     }
@@ -109,5 +131,62 @@ class AlarmFragment : Fragment() {
     }
     private val alarmsListener: AlarmsListener = {
         adapter.alarms = it
+    }
+
+    private suspend fun fillAlarmsTime() : MutableMap<Long, Long> = withContext(Dispatchers.Default){
+        val map = mutableMapOf<Long, Long>()
+        val calendar = Calendar.getInstance()
+        val calendar2 = Calendar.getInstance(ULocale.ROOT)
+        for(alr in adapter.alarms) {
+            if(alr.enabled == 1) {
+                calendar.set(Calendar.HOUR_OF_DAY, alr.timeHours)
+                calendar.set(Calendar.MINUTE, alr.timeMinutes)
+                calendar.set(Calendar.SECOND, 0)
+                val longTime: Long = if (calendar2.timeInMillis > calendar.timeInMillis) {
+                    calendar.timeInMillis + 86400000
+                } else calendar.timeInMillis
+                map[alr.id] = longTime
+            }
+        }
+        val sortedMap = map.toList().sortedBy { it.second }.toMap().toMutableMap()
+        return@withContext sortedMap
+    }
+
+    private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
+        if(isDisable) {
+            millisToAlarm.remove(alarm.id)
+        }
+        else {
+            val calendar = Calendar.getInstance()
+            val calendar2 = Calendar.getInstance(ULocale.ROOT)
+            calendar.set(Calendar.HOUR_OF_DAY, alarm.timeHours)
+            calendar.set(Calendar.MINUTE, alarm.timeMinutes)
+            calendar.set(Calendar.SECOND, 0)
+            val longTime: Long = if (calendar2.timeInMillis > calendar.timeInMillis) {
+                calendar.timeInMillis + 86400000
+            } else calendar.timeInMillis
+            millisToAlarm[alarm.id] = longTime
+            millisToAlarm = millisToAlarm.toList().sortedBy { it.second }.toMap().toMutableMap()
+        }
+    }
+    private fun updateBar(): String {
+        var txt: String = ""
+        if(millisToAlarm.isEmpty()) txt += "Все сигналы\nвыключены"
+        else {
+            val calendar = Calendar.getInstance(ULocale.ROOT)
+            val longTime: Long = millisToAlarm.entries.first().value
+            val minutes: Int = if (calendar.timeInMillis > longTime) {
+                ((longTime - calendar.timeInMillis) / 60000).toInt()
+            } else ((longTime - calendar.timeInMillis) / 60000).toInt()
+            when(minutes) {
+                0 -> txt += "Сработает менее чем\nчерез 1 мин."
+                in 1..59 -> txt += "Сработает через\n$minutes мин."
+                else -> {
+                    val hours = minutes / 60
+                    txt += "Сработает через\n$hours ч. ${minutes % 60} мин."
+                }
+            }
+        }
+        return txt
     }
 }

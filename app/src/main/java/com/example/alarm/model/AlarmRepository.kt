@@ -1,5 +1,6 @@
 package com.example.alarm.model
 
+import android.content.Context
 import kotlinx.coroutines.flow.Flow
 
 interface AlarmRepository {
@@ -14,5 +15,5 @@ interface AlarmRepository {
 
     fun getAlarmById(id: Long): Flow<Alarm?>
 
-    suspend fun deleteAlarms(list: List<Alarm>)
+    suspend fun deleteAlarms(list: List<Alarm>, context: Context?)
 }
