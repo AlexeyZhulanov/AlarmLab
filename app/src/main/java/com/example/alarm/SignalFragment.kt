@@ -53,7 +53,7 @@ class SignalFragment(
                 uiScope.launch {
                     MyAlarmManager(fragmentContext, alarmPlug).endProcess()
                     alarmsService.updateEnabled(alarmPlug.id, 0)
-
+                    // TODO("нужно уведомить AlarmFragment о том, что будильник выкл")
                 }
                 requireActivity().onBackPressedDispatcher.onBackPressed()
             }

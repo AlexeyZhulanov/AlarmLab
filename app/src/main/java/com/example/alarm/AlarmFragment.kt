@@ -42,7 +42,6 @@ class AlarmFragment : Fragment() {
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
-    private lateinit var settings: Settings
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
     private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -50,7 +49,6 @@ class AlarmFragment : Fragment() {
             intent?.let {
                 val name = it.getStringExtra("alarmName")
                 val id = it.getLongExtra("alarmId", 0)
-                Log.d("testWork2", "YESYES")
                 requireActivity().supportFragmentManager
                     .beginTransaction()
                     .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
@@ -63,12 +61,7 @@ class AlarmFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
             Repositories.init(requireActivity().applicationContext)
             val binding = FragmentAlarmBinding.inflate(inflater, container, false)
-//            uiScope.launch {
-//                settings = alarmsService.getSettings()
-//                Log.d("testSettings", settings.toString())
-//            }
-        settings = Settings(0)
-            adapter = AlarmsAdapter(settings, object : AlarmActionListener {
+            adapter = AlarmsAdapter(object : AlarmActionListener {
                 override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                     uiScope.launch {
                         var bool = 0
@@ -260,6 +253,7 @@ class AlarmFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         registerBroadCastReceiver()
+        uiScope.launch { millisToAlarm = fillAlarmsTime() }
     }
 
     override fun onPause() {

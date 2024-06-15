@@ -9,7 +9,12 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.ItemAlarmBinding
 import com.example.alarm.model.Alarm
+import com.example.alarm.model.AlarmService
 import com.example.alarm.model.Settings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 interface AlarmActionListener {
     fun onAlarmEnabled(alarm: Alarm, index: Int)
@@ -18,7 +23,6 @@ interface AlarmActionListener {
 }
 
 class AlarmsAdapter(
-    private val settings: Settings,
     private val actionListener: AlarmActionListener
 ) : RecyclerView.Adapter<AlarmsAdapter.AlarmsViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
@@ -32,6 +36,11 @@ class AlarmsAdapter(
     var canLongClick: Boolean = true
     private var checkedPositions: MutableSet<Int> = mutableSetOf()
     private var index = 0
+
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
+    private val alarmsService: AlarmService
+        get() = Repositories.alarmRepository as AlarmService
 
     fun getDeleteList(): List<Alarm> {
         val list = mutableListOf<Alarm>()
@@ -110,31 +119,34 @@ class AlarmsAdapter(
     }
 
     override fun onBindViewHolder(holder: AlarmsViewHolder, position: Int) {
-            val alarm = alarms[position]
-            with(holder.binding) {
-                holder.itemView.tag = alarm
-                switch1.tag = alarm
-                var tm = ""
-                var tm2 = ""
-                if (alarm.timeMinutes == 0) tm = "0"
-                if(alarm.timeMinutes in 1..9) tm2 = "0"
-                val txt: String = "${alarm.timeHours}:${tm2}${alarm.timeMinutes}${tm}"
-                timeTextView.text = txt
-                var txt2: String = ""
-                txt2 += if(alarm.name != "default")
-                    "<font color='#FF00FF'>${alarm.name}</font>"
-                else "раз в ${settings.interval} минут"
-                intervalTextView.text = Html.fromHtml(txt2, 0)
-                switch1.isChecked = alarm.enabled == 1
-                if (!canLongClick) {
-                    checkBox.tag = alarm
-                    switch1.visibility = View.INVISIBLE
-                    checkBox.visibility = View.VISIBLE
-                    checkBox.isChecked = position in checkedPositions
-                }
-                else {
-                    switch1.visibility = View.VISIBLE
-                    checkBox.visibility = View.GONE
+            uiScope.launch {
+                val settings = alarmsService.getSettings()
+                val alarm = alarms[position]
+                with(holder.binding) {
+                    holder.itemView.tag = alarm
+                    switch1.tag = alarm
+                    var tm = ""
+                    var tm2 = ""
+                    if (alarm.timeMinutes == 0) tm = "0"
+                    if (alarm.timeMinutes in 1..9) tm2 = "0"
+                    val txt: String = "${alarm.timeHours}:${tm2}${alarm.timeMinutes}${tm}"
+                    timeTextView.text = txt
+                    var txt2: String = ""
+                    txt2 += if (alarm.name != "default")
+                        "<font color='#FF00FF'>${alarm.name}</font>"
+                    else "раз в ${settings.interval} минут"
+                    if(settings.interval == 3 && alarm.name == "default") txt2 += "ы"
+                    intervalTextView.text = Html.fromHtml(txt2, 0)
+                    switch1.isChecked = alarm.enabled == 1
+                    if (!canLongClick) {
+                        checkBox.tag = alarm
+                        switch1.visibility = View.INVISIBLE
+                        checkBox.visibility = View.VISIBLE
+                        checkBox.isChecked = position in checkedPositions
+                    } else {
+                        switch1.visibility = View.VISIBLE
+                        checkBox.visibility = View.GONE
+                    }
                 }
             }
     }
