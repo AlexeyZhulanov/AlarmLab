@@ -30,7 +30,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -39,9 +41,10 @@ class AlarmFragment : Fragment() {
     private lateinit var adapter: AlarmsAdapter
 
     private val job = Job()
-    private val uiScope = CoroutineScope(Dispatchers.Main + job)
+    private var uiScope = CoroutineScope(Dispatchers.Main + job)
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
+    var signalFlag: Boolean = false
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
     private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -139,8 +142,10 @@ class AlarmFragment : Fragment() {
         binding.recyclerview.layoutManager = layoutManager
         binding.recyclerview.adapter = adapter
         uiScope.launch {
-            millisToAlarm = fillAlarmsTime()
+            if(!signalFlag) millisToAlarm = fillAlarmsTime()
+            else signalFlag = false
             while (true) {
+                Log.d("testWork", millisToAlarm.toString())
                 binding.barTextView.text = updateBar()
                 delay(30000)
             }
@@ -205,7 +210,12 @@ class AlarmFragment : Fragment() {
         return@withContext sortedMap
     }
 
-    private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
+    fun changeTimeAndFlag(alarm: Alarm, isDisable: Boolean) {
+        signalFlag = true
+        changeAlarmTime(alarm, isDisable)
+    }
+
+     private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
         if(isDisable) {
             millisToAlarm.remove(alarm.id)
         }
@@ -253,11 +263,11 @@ class AlarmFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         registerBroadCastReceiver()
-        uiScope.launch { millisToAlarm = fillAlarmsTime() }
     }
 
     override fun onPause() {
         super.onPause()
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver)
     }
+
 }

@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 interface AlarmActionListener {
     fun onAlarmEnabled(alarm: Alarm, index: Int)
@@ -119,36 +120,36 @@ class AlarmsAdapter(
     }
 
     override fun onBindViewHolder(holder: AlarmsViewHolder, position: Int) {
-            uiScope.launch {
-                val settings = alarmsService.getSettings()
-                val alarm = alarms[position]
-                with(holder.binding) {
-                    holder.itemView.tag = alarm
-                    switch1.tag = alarm
-                    var tm = ""
-                    var tm2 = ""
-                    if (alarm.timeMinutes == 0) tm = "0"
-                    if (alarm.timeMinutes in 1..9) tm2 = "0"
-                    val txt: String = "${alarm.timeHours}:${tm2}${alarm.timeMinutes}${tm}"
-                    timeTextView.text = txt
-                    var txt2: String = ""
-                    txt2 += if (alarm.name != "default")
-                        "<font color='#FF00FF'>${alarm.name}</font>"
-                    else "раз в ${settings.interval} минут"
-                    if(settings.interval == 3 && alarm.name == "default") txt2 += "ы"
-                    intervalTextView.text = Html.fromHtml(txt2, 0)
-                    switch1.isChecked = alarm.enabled == 1
-                    if (!canLongClick) {
-                        checkBox.tag = alarm
-                        switch1.visibility = View.INVISIBLE
-                        checkBox.visibility = View.VISIBLE
-                        checkBox.isChecked = position in checkedPositions
-                    } else {
-                        switch1.visibility = View.VISIBLE
-                        checkBox.visibility = View.GONE
-                    }
+        uiScope.launch {
+            val settings = alarmsService.getSettings()
+            val alarm = alarms[position]
+            with(holder.binding) {
+                holder.itemView.tag = alarm
+                switch1.tag = alarm
+                var tm = ""
+                var tm2 = ""
+                if (alarm.timeMinutes == 0) tm = "0"
+                if (alarm.timeMinutes in 1..9) tm2 = "0"
+                val txt: String = "${alarm.timeHours}:${tm2}${alarm.timeMinutes}${tm}"
+                timeTextView.text = txt
+                var txt2: String = ""
+                txt2 += if (alarm.name != "default")
+                    "<font color='#FF00FF'>${alarm.name}</font>"
+                else "раз в ${settings.interval} минут"
+                if (settings.interval == 3 && alarm.name == "default") txt2 += "ы"
+                intervalTextView.text = Html.fromHtml(txt2, 0)
+                switch1.isChecked = alarm.enabled == 1
+                if (!canLongClick) {
+                    checkBox.tag = alarm
+                    switch1.visibility = View.INVISIBLE
+                    checkBox.visibility = View.VISIBLE
+                    checkBox.isChecked = position in checkedPositions
+                } else {
+                    switch1.visibility = View.VISIBLE
+                    checkBox.visibility = View.GONE
                 }
             }
+        }
     }
     override fun getItemCount(): Int = alarms.size
 
