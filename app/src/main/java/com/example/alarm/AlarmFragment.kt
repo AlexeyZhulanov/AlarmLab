@@ -1,17 +1,24 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.icu.util.Calendar
 import android.icu.util.ULocale
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.toMutableStateMap
 import androidx.fragment.app.Fragment
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
@@ -35,14 +42,32 @@ class AlarmFragment : Fragment() {
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
+    private lateinit var settings: Settings
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
+    private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.let {
+                val name = it.getStringExtra("alarmName")
+                val id = it.getLongExtra("alarmId", 0)
+                Log.d("testWork2", "YESYES")
+                requireActivity().supportFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
+                    .addToBackStack("signal")
+                    .commit()
+            }
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
             Repositories.init(requireActivity().applicationContext)
-            var settings: Settings = Settings(0)
             val binding = FragmentAlarmBinding.inflate(inflater, container, false)
-            uiScope.launch { settings = alarmsService.getSettings() }
+//            uiScope.launch {
+//                settings = alarmsService.getSettings()
+//                Log.d("testSettings", settings.toString())
+//            }
+        settings = Settings(0)
             adapter = AlarmsAdapter(settings, object : AlarmActionListener {
                 override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                     uiScope.launch {
@@ -157,7 +182,6 @@ class AlarmFragment : Fragment() {
                 override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) { return }
             }).show(childFragmentManager, "AddTag")
         }
-
         return binding.root
     }
 
@@ -224,5 +248,22 @@ class AlarmFragment : Fragment() {
             }
         }
         return txt
+    }
+
+    private fun registerBroadCastReceiver() {
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
+            receiver,
+            IntentFilter(LOCAL_BROADCAST_KEY)
+        )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerBroadCastReceiver()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver)
     }
 }

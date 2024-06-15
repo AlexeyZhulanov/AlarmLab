@@ -6,16 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import android.icu.util.ULocale
-import android.util.Log
 import android.widget.Toast
-import androidx.fragment.app.FragmentManager
 import com.example.alarm.AlarmReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MyAlarmManager(

@@ -16,7 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity(), SignalStart {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
@@ -97,13 +97,5 @@ class MainActivity : AppCompatActivity(), SignalStart {
             super.onKeyDown(keyCode, event)
         }
         return true;
-    }
-    override fun onAlarmTriggered(name: String?, id: Long) {
-        Log.d("testWork2", "YESYES")
-        supportFragmentManager
-            .beginTransaction()
-            .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
-            .addToBackStack("signal")
-            .commit()
     }
 }

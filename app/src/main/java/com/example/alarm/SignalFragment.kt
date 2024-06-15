@@ -17,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-
 class SignalFragment(
     val name: String,
     val id: Long
@@ -45,20 +44,18 @@ class SignalFragment(
         mediaPlayer.start()
         binding.pulsator.start()
         flagVisible = true
+        val fragmentContext = requireContext()
         binding.repeatButton.setOnClickListener {
-            uiScope.launch {
-                MyAlarmManager(context, alarmPlug).endProcess()
-                val settings = alarmsService.getSettings()
-                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
-                requireActivity().onBackPressedDispatcher.onBackPressed()
-            }
-            requireActivity().onBackPressedDispatcher.onBackPressed()
+            dropAndRepeatFragment()
         }
         binding.slideButton.onSlideCompleteListener = object : SlideToActView.OnSlideCompleteListener {
             override fun onSlideComplete(view: SlideToActView) {
-                uiScope.launch { MyAlarmManager(context, alarmPlug).endProcess() }
-                requireActivity().onBackPressedDispatcher.onBackPressed()
+                uiScope.launch {
+                    MyAlarmManager(fragmentContext, alarmPlug).endProcess()
+                    alarmsService.updateEnabled(alarmPlug.id, 0)
 
+                }
+                requireActivity().onBackPressedDispatcher.onBackPressed()
             }
         }
 
