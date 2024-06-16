@@ -1,5 +1,6 @@
 package com.example.alarm
 
+import android.content.Intent
 import android.icu.util.Calendar
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -7,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.example.alarm.databinding.FragmentSignalBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
@@ -29,6 +31,7 @@ class SignalFragment(
     private lateinit var mediaPlayer: MediaPlayer
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val binding = FragmentSignalBinding.inflate(inflater, container, false)
         val tmp = Calendar.getInstance().time.toString()
@@ -53,7 +56,11 @@ class SignalFragment(
                 uiScope.launch {
                     MyAlarmManager(fragmentContext, alarmPlug).endProcess()
                     alarmsService.updateEnabled(alarmPlug.id, 0)
-                    AlarmFragment().changeTimeAndFlag(alarmPlug, true)
+                    LocalBroadcastManager.getInstance(fragmentContext).sendBroadcast(
+                        Intent(LOCAL_BROADCAST_KEY2).apply {
+                            putExtra("alarmIdPlug", alarmPlug.id)
+                        }
+                    )
                 }
                 requireActivity().onBackPressedDispatcher.onBackPressed()
             }
@@ -77,3 +84,4 @@ class SignalFragment(
         flagVisible = false
     }
 }
+const val LOCAL_BROADCAST_KEY2 = "alarm_update"

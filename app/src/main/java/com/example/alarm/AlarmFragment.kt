@@ -18,6 +18,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.toMutableStateMap
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.alarm.databinding.FragmentAlarmBinding
@@ -39,9 +40,11 @@ import kotlinx.coroutines.withContext
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
+    private lateinit var binding: FragmentAlarmBinding
 
     private val job = Job()
     private var uiScope = CoroutineScope(Dispatchers.Main + job)
+    private var updateJob: Job? = null
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
     var signalFlag: Boolean = false
@@ -50,20 +53,32 @@ class AlarmFragment : Fragment() {
     private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.let {
-                val name = it.getStringExtra("alarmName")
-                val id = it.getLongExtra("alarmId", 0)
-                requireActivity().supportFragmentManager
-                    .beginTransaction()
-                    .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
-                    .addToBackStack("signal")
-                    .commit()
+                when(it.action) {
+                    "alarm_start" -> {
+                        val name = it.getStringExtra("alarmName")
+                        val id = it.getLongExtra("alarmId", 0)
+                        requireActivity().supportFragmentManager
+                            .beginTransaction()
+                            .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
+                            .addToBackStack("signal")
+                            .commit()
+                    }
+                    "alarm_update" -> {
+                        val id = it.getLongExtra("alarmIdPlug", 0)
+                        val a = Alarm(id)
+                        changeTimeAndFlag(a,true)
+                    }
+                    else -> {
+                        throw Exception("Wrong Receiver")
+                    }
+                }
             }
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
             Repositories.init(requireActivity().applicationContext)
-            val binding = FragmentAlarmBinding.inflate(inflater, container, false)
+            binding = FragmentAlarmBinding.inflate(inflater, container, false)
             adapter = AlarmsAdapter(object : AlarmActionListener {
                 override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                     uiScope.launch {
@@ -141,11 +156,9 @@ class AlarmFragment : Fragment() {
         val layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerview.layoutManager = layoutManager
         binding.recyclerview.adapter = adapter
-        uiScope.launch {
-            if(!signalFlag) millisToAlarm = fillAlarmsTime()
-            else signalFlag = false
-            while (true) {
-                Log.d("testWork", millisToAlarm.toString())
+        updateJob = lifecycleScope.launch {
+            millisToAlarm = fillAlarmsTime()
+            while (isActive) {
                 binding.barTextView.text = updateBar()
                 delay(30000)
             }
@@ -186,6 +199,7 @@ class AlarmFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         alarmsService.removeListener(alarmsListener)
+        updateJob?.cancel()
     }
     private val alarmsListener: AlarmsListener = {
         adapter.alarms = it
@@ -213,6 +227,7 @@ class AlarmFragment : Fragment() {
     fun changeTimeAndFlag(alarm: Alarm, isDisable: Boolean) {
         signalFlag = true
         changeAlarmTime(alarm, isDisable)
+        binding.barTextView.text = updateBar()
     }
 
      private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
@@ -258,6 +273,10 @@ class AlarmFragment : Fragment() {
             receiver,
             IntentFilter(LOCAL_BROADCAST_KEY)
         )
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
+            receiver,
+            IntentFilter(LOCAL_BROADCAST_KEY2)
+        )
     }
 
     override fun onResume() {
@@ -268,6 +287,7 @@ class AlarmFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver)
+        updateJob?.cancel()
     }
 
 }
