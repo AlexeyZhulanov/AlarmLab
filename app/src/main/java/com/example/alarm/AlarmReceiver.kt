@@ -12,7 +12,7 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val name = intent.getStringExtra("alarmName")
         val id = intent.getLongExtra("alarmId", 0)
-        var localBroadCastIntent = Intent(LOCAL_BROADCAST_KEY)
+        val localBroadCastIntent = Intent(LOCAL_BROADCAST_KEY)
         localBroadCastIntent.putExtra("alarmName",name?:"")
         localBroadCastIntent.putExtra("alarmId",id)
         Handler(Looper.getMainLooper()).post {

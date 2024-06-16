@@ -24,13 +24,14 @@ interface AlarmActionListener {
 }
 
 class AlarmsAdapter(
+    private val settings: Settings,
     private val actionListener: AlarmActionListener
 ) : RecyclerView.Adapter<AlarmsAdapter.AlarmsViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
     var alarms: List<Alarm> = emptyList()
         @SuppressLint("NotifyDataSetChanged")
-        set(newValue) {
-            field = newValue
+        set(value) {
+            field = value
             notifyDataSetChanged()
         }
 
@@ -40,8 +41,6 @@ class AlarmsAdapter(
 
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
-    private val alarmsService: AlarmService
-        get() = Repositories.alarmRepository as AlarmService
 
     fun getDeleteList(): List<Alarm> {
         val list = mutableListOf<Alarm>()
@@ -119,9 +118,8 @@ class AlarmsAdapter(
         return AlarmsViewHolder(binding)
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onBindViewHolder(holder: AlarmsViewHolder, position: Int) {
-        uiScope.launch {
-            val settings = alarmsService.getSettings()
             val alarm = alarms[position]
             with(holder.binding) {
                 holder.itemView.tag = alarm
@@ -149,7 +147,6 @@ class AlarmsAdapter(
                     checkBox.visibility = View.GONE
                 }
             }
-        }
     }
     override fun getItemCount(): Int = alarms.size
 

@@ -5,18 +5,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.icu.util.Calendar
 import android.icu.util.ULocale
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.toMutableStateMap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -31,26 +28,29 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+const val APP_PREFERENCES = "APP_PREFERENCES"
+const val PREF_INTERVAL = "PREF_INTERVAL"
+
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
     private lateinit var binding: FragmentAlarmBinding
+    private lateinit var preferences: SharedPreferences
 
     private val job = Job()
     private var uiScope = CoroutineScope(Dispatchers.Main + job)
     private var updateJob: Job? = null
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
-    var signalFlag: Boolean = false
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
     private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
+        @SuppressLint("NotifyDataSetChanged")
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.let {
                 when(it.action) {
@@ -66,7 +66,9 @@ class AlarmFragment : Fragment() {
                     "alarm_update" -> {
                         val id = it.getLongExtra("alarmIdPlug", 0)
                         val a = Alarm(id)
-                        changeTimeAndFlag(a,true)
+                        changeAlarmTime(a, true)
+                        binding.barTextView.text = updateBar()
+                        adapter.notifyDataSetChanged()
                     }
                     else -> {
                         throw Exception("Wrong Receiver")
@@ -77,122 +79,130 @@ class AlarmFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-            Repositories.init(requireActivity().applicationContext)
+        Repositories.init(requireActivity().applicationContext)
             binding = FragmentAlarmBinding.inflate(inflater, container, false)
-            adapter = AlarmsAdapter(object : AlarmActionListener {
-                override fun onAlarmEnabled(alarm: Alarm, index: Int) {
-                    uiScope.launch {
-                        var bool = 0
-                        if (alarm.enabled == 0) { //turn on
-                            bool = 1
-                            MyAlarmManager(context, alarm).startProcess()
-                            changeAlarmTime(alarm, false)
-                            binding.barTextView.text = updateBar()
-                        } else {
-                            MyAlarmManager(context, alarm).endProcess()
-                            changeAlarmTime(alarm, true)
-                            binding.barTextView.text = updateBar()
-                        }
-                        alarmsService.updateEnabled(alarm.id, bool)
-                        adapter.notifyItemChanged(index)
-                    }
-                }
-
-                override fun onAlarmChange(alarm: Alarm) {
-                    BottomSheetFragment(false, alarm, object : BottomSheetListener {
-                        override fun onAddAlarm(alarm: Alarm) { return }
-                        override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) {
-                            if(alarmNew.enabled == 1) {
-                                changeAlarmTime(alarmOld, true)
-                                changeAlarmTime(alarmNew, false)
+                preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+                val interval: Int = preferences.getInt(PREF_INTERVAL, 5)
+                val settings = Settings(id = 0, interval = interval)
+                adapter = AlarmsAdapter(settings, object : AlarmActionListener {
+                    override fun onAlarmEnabled(alarm: Alarm, index: Int) {
+                        uiScope.launch {
+                            var bool = 0
+                            if (alarm.enabled == 0) { //turn on
+                                bool = 1
+                                MyAlarmManager(context, alarm).startProcess()
+                                changeAlarmTime(alarm, false)
+                                binding.barTextView.text = updateBar()
+                            } else {
+                                MyAlarmManager(context, alarm).endProcess()
+                                changeAlarmTime(alarm, true)
                                 binding.barTextView.text = updateBar()
                             }
+                            alarmsService.updateEnabled(alarm.id, bool)
+                            adapter.notifyItemChanged(index)
                         }
-                    }).show(childFragmentManager, "ChangeTag")
-                }
+                    }
 
-                override fun onAlarmLongClicked() {
-                    binding.floatingActionButtonAdd.visibility = View.GONE
-                    binding.floatingActionButtonDelete.visibility = View.VISIBLE
-                    requireActivity().onBackPressedDispatcher.addCallback(
-                        viewLifecycleOwner,
-                        object : OnBackPressedCallback(true) {
-                            @SuppressLint("NotifyDataSetChanged")
-                            override fun handleOnBackPressed() {
-                                if (!adapter.canLongClick) {
-                                    adapter.clearPositions()
-                                    adapter.notifyDataSetChanged()
-                                    binding.floatingActionButtonDelete.visibility = View.GONE
-                                    binding.floatingActionButtonAdd.visibility = View.VISIBLE
-                                    uiScope.launch {
-                                        alarmsService.getAlarms()
-                                        alarmsService.notifyChanges()
+                    override fun onAlarmChange(alarm: Alarm) {
+                        BottomSheetFragment(false, alarm, object : BottomSheetListener {
+                            override fun onAddAlarm(alarm: Alarm) {
+                                return
+                            }
+
+                            override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) {
+                                if (alarmNew.enabled == 1) {
+                                    changeAlarmTime(alarmOld, true)
+                                    changeAlarmTime(alarmNew, false)
+                                    binding.barTextView.text = updateBar()
+                                }
+                            }
+                        }).show(childFragmentManager, "ChangeTag")
+                    }
+
+                    override fun onAlarmLongClicked() {
+                        binding.floatingActionButtonAdd.visibility = View.GONE
+                        binding.floatingActionButtonDelete.visibility = View.VISIBLE
+                        requireActivity().onBackPressedDispatcher.addCallback(
+                            viewLifecycleOwner,
+                            object : OnBackPressedCallback(true) {
+                                @SuppressLint("NotifyDataSetChanged")
+                                override fun handleOnBackPressed() {
+                                    if (!adapter.canLongClick) {
+                                        adapter.clearPositions()
+                                        adapter.notifyDataSetChanged()
+                                        binding.floatingActionButtonDelete.visibility = View.GONE
+                                        binding.floatingActionButtonAdd.visibility = View.VISIBLE
+                                        uiScope.launch {
+                                            alarmsService.getAlarms()
+                                            alarmsService.notifyChanges()
+                                        }
+                                    } else {
+                                        //Removing this callback
+                                        remove()
+                                        requireActivity().onBackPressedDispatcher.onBackPressed()
                                     }
-                                } else {
-                                    //Removing this callback
-                                    remove()
-                                    requireActivity().onBackPressedDispatcher.onBackPressed()
                                 }
+                            })
+                        binding.floatingActionButtonDelete.setOnClickListener {
+                            val alarmsToDelete = adapter.getDeleteList()
+                            if (alarmsToDelete.isNotEmpty()) {
+                                uiScope.launch {
+                                    alarmsService.deleteAlarms(alarmsToDelete, context)
+                                    for (a in alarmsToDelete) {
+                                        if (a.enabled == 1) changeAlarmTime(a, true)
+                                    }
+                                    binding.barTextView.text = updateBar()
+                                }
+                                binding.floatingActionButtonDelete.visibility = View.GONE
+                                binding.floatingActionButtonAdd.visibility = View.VISIBLE
+                                adapter.clearPositions()
+
                             }
-                        })
-                    binding.floatingActionButtonDelete.setOnClickListener {
-                        val alarmsToDelete = adapter.getDeleteList()
-                        if (alarmsToDelete.isNotEmpty()) {
+                        }
+                    }
+                })
+
+                val layoutManager = LinearLayoutManager(requireContext())
+                binding.recyclerview.layoutManager = layoutManager
+                binding.recyclerview.adapter = adapter
+                updateJob = lifecycleScope.launch {
+                    millisToAlarm = fillAlarmsTime()
+                    while (isActive) {
+                        binding.barTextView.text = updateBar()
+                        delay(30000)
+                    }
+                }
+                alarmsService.addListener(alarmsListener)
+                (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
+
+                binding.floatingActionButtonAdd.setOnClickListener {
+                    BottomSheetFragment(true, Alarm(0), object : BottomSheetListener {
+                        override fun onAddAlarm(alarm: Alarm) {
                             uiScope.launch {
-                                alarmsService.deleteAlarms(alarmsToDelete, context)
-                                for(a in alarmsToDelete) {
-                                    if(a.enabled == 1) changeAlarmTime(a, true)
+                                var id: Long = 0
+                                for (a in adapter.alarms) {
+                                    if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) {
+                                        id = a.id
+                                        break
+                                    }
                                 }
+                                val alr = Alarm(
+                                    id = id,
+                                    timeHours = alarm.timeHours,
+                                    timeMinutes = alarm.timeMinutes,
+                                    name = alarm.name,
+                                    enabled = alarm.enabled
+                                )
+                                changeAlarmTime(alr, false)
                                 binding.barTextView.text = updateBar()
                             }
-                            binding.floatingActionButtonDelete.visibility = View.GONE
-                            binding.floatingActionButtonAdd.visibility = View.VISIBLE
-                            adapter.clearPositions()
-
                         }
-                    }
-                }
-            })
-        val layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerview.layoutManager = layoutManager
-        binding.recyclerview.adapter = adapter
-        updateJob = lifecycleScope.launch {
-            millisToAlarm = fillAlarmsTime()
-            while (isActive) {
-                binding.barTextView.text = updateBar()
-                delay(30000)
-            }
-        }
 
-        alarmsService.addListener(alarmsListener)
-        (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
-
-        binding.floatingActionButtonAdd.setOnClickListener {
-            BottomSheetFragment(true, Alarm(0), object : BottomSheetListener {
-                override fun onAddAlarm(alarm: Alarm) {
-                    uiScope.launch {
-                        var id: Long = 0
-                        for (a in adapter.alarms) {
-                            if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) {
-                                id = a.id
-                                break
-                            }
+                        override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) {
+                            return
                         }
-                        val alr = Alarm(
-                            id = id,
-                            timeHours = alarm.timeHours,
-                            timeMinutes = alarm.timeMinutes,
-                            name = alarm.name,
-                            enabled = alarm.enabled
-                        )
-                        changeAlarmTime(alr, false)
-                        binding.barTextView.text = updateBar()
-                    }
+                    }).show(childFragmentManager, "AddTag")
                 }
-
-                override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) { return }
-            }).show(childFragmentManager, "AddTag")
-        }
         return binding.root
     }
 
@@ -222,12 +232,6 @@ class AlarmFragment : Fragment() {
         }
         val sortedMap = map.toList().sortedBy { it.second }.toMap().toMutableMap()
         return@withContext sortedMap
-    }
-
-    fun changeTimeAndFlag(alarm: Alarm, isDisable: Boolean) {
-        signalFlag = true
-        changeAlarmTime(alarm, isDisable)
-        binding.barTextView.text = updateBar()
     }
 
      private fun changeAlarmTime(alarm: Alarm, isDisable: Boolean) {
@@ -289,5 +293,4 @@ class AlarmFragment : Fragment() {
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver)
         updateJob?.cancel()
     }
-
 }

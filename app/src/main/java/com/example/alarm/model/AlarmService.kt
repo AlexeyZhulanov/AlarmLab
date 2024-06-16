@@ -10,6 +10,7 @@ import com.example.alarm.room.SettingsDbEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -28,7 +29,9 @@ class AlarmService(
     private var settings = Settings(0)
 
     init {
-        uiScope.launch { alarms = getAlarms() }
+        uiScope.launch {
+            alarms = getAlarms()
+        }
     }
 
     override suspend fun getAlarms(): MutableList<Alarm> = withContext(Dispatchers.IO) {
@@ -106,6 +109,8 @@ class AlarmService(
     }
     fun removeListener(listener: AlarmsListener) = listeners.remove(listener)
     suspend fun notifyChanges() = withContext(Dispatchers.Main + job) {
-        listeners.forEach { it.invoke(alarms) }
+        listeners.forEach {
+            it.invoke(alarms)
+        }
     }
 }

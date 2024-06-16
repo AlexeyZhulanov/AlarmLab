@@ -1,5 +1,7 @@
 package com.example.alarm
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,6 +23,7 @@ class SettingsFragment : Fragment() {
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
     private var globalId: Long = 0
+    private lateinit var preferences: SharedPreferences
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val binding = FragmentSettingsBinding.inflate(inflater, container, false)
@@ -78,19 +81,27 @@ class SettingsFragment : Fragment() {
         binding.interval3.setOnClickListener {
             val s = readSettings(globalId)
             uiScope.launch { alarmsService.updateSettings(s) }
+            updatePrefs(3)
         }
         binding.interval5.setOnClickListener {
             val s = readSettings(globalId)
             uiScope.launch { alarmsService.updateSettings(s) }
+            updatePrefs(5)
         }
         binding.interval10.setOnClickListener {
             val s = readSettings(globalId)
             uiScope.launch { alarmsService.updateSettings(s) }
+            updatePrefs(10)
         }
         return binding.root
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
+    private fun updatePrefs(interval: Int) {
+        uiScope.launch {
+            preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+            preferences.edit()
+                .putInt(PREF_INTERVAL, interval)
+                .apply()
+        }
     }
 }
