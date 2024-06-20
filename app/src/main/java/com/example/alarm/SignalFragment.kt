@@ -24,7 +24,6 @@ class SignalFragment(
     val id: Long
 ) : Fragment() {
 
-    var flagVisible: Boolean = false
     private val alarmPlug = Alarm(id = id, name = name)
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
@@ -46,7 +45,6 @@ class SignalFragment(
         mediaPlayer.isLooping = true
         mediaPlayer.start()
         binding.pulsator.start()
-        flagVisible = true
         val fragmentContext = requireContext()
         binding.repeatButton.setOnClickListener {
             dropAndRepeatFragment()
@@ -81,7 +79,6 @@ class SignalFragment(
     override fun onDestroyView() {
         super.onDestroyView()
         mediaPlayer.stop()
-        flagVisible = false
     }
 }
 const val LOCAL_BROADCAST_KEY2 = "alarm_update"

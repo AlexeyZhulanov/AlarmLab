@@ -1,17 +1,24 @@
 package com.example.alarm
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.view.KeyEvent
+import android.Manifest
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.alarm.databinding.ActivityMainBinding
-import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
+import com.example.alarm.model.AppVisibilityTracker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,17 +42,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    companion object {
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater).also { setContentView(it.root) }
         setContentView(binding.root)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
+            }
+        }
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
                 .add(R.id.fragmentContainer, AlarmFragment())
                 .commit()
         }
-
         supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentListener, false)
     }
 
@@ -76,27 +91,14 @@ class MainActivity : AppCompatActivity() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if(SignalFragment("",0).flagVisible) {
-            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-                SignalFragment("", 0).dropAndRepeatFragment()
-            }
-        }
-        else {
-            super.onKeyUp(keyCode, event)
-        }
-        return true;
+
+    override fun onResume() {
+        super.onResume()
+        AppVisibilityTracker.setAppVisible(true)
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if(SignalFragment("",0).flagVisible) {
-            if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                SignalFragment("", 0).dropAndRepeatFragment()
-            }
-        }
-        else {
-            super.onKeyDown(keyCode, event)
-        }
-        return true;
+    override fun onPause() {
+        super.onPause()
+        AppVisibilityTracker.setAppVisible(false)
     }
 }

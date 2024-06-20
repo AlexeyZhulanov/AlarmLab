@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import android.icu.util.Calendar
 import android.icu.util.ULocale
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -52,6 +53,7 @@ class AlarmFragment : Fragment() {
     private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
         @SuppressLint("NotifyDataSetChanged")
         override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d("testReceive", "Alarm in fragment")
             intent?.let {
                 when(it.action) {
                     "alarm_start" -> {
@@ -67,6 +69,13 @@ class AlarmFragment : Fragment() {
                         val id = it.getLongExtra("alarmIdPlug", 0)
                         val a = Alarm(id)
                         changeAlarmTime(a, true)
+                        binding.barTextView.text = updateBar()
+                        adapter.notifyDataSetChanged()
+                    }
+                    "alarm_off" -> {
+                        val id = it.getLongExtra("alarmIdOff", 0)
+                        val a = Alarm(id)
+                        changeAlarmTime(a, false)
                         binding.barTextView.text = updateBar()
                         adapter.notifyDataSetChanged()
                     }
