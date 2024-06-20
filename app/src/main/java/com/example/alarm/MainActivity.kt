@@ -1,18 +1,19 @@
 package com.example.alarm
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.Manifest
+import android.app.AlertDialog
+import android.content.Intent
+import android.net.Uri
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import android.provider.Settings
 import androidx.core.app.ActivityCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -44,6 +45,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1
+        private const val FULL_SCREEN_INTENT_PERMISSION_REQUEST_CODE = 1001
         private const val FOREGROUND_PERMISSION_REQUEST_CODE = 1002
     }
 
@@ -56,9 +58,7 @@ class MainActivity : AppCompatActivity() {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)
             }
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.FOREGROUND_SERVICE), FOREGROUND_PERMISSION_REQUEST_CODE)
-        }
+        checkOverlayPermission(this)
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
@@ -104,5 +104,23 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         AppVisibilityTracker.setAppVisible(false)
+    }
+    private fun checkOverlayPermission(context: Context) {
+        if (!Settings.canDrawOverlays(context)) {
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("Необходимы разрешения")
+            builder.setMessage("Пожалуйста, предоставьте разрешение на наложение поверх других приложений для правильной работы будильника.")
+            builder.setPositiveButton("Настройки") { _, _ ->
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:${context.packageName}")
+                )
+                context.startActivity(intent)
+            }
+            builder.setNegativeButton("Отмена") { dialog, _ ->
+                dialog.dismiss()
+            }
+            builder.show()
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -14,6 +15,7 @@ class SignalActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("testSignalAct", "works!")
         binding = ActivitySignalBinding.inflate(layoutInflater).also { setContentView(it.root) }
         setContentView(binding.root)
         val alarmName = intent.getStringExtra("alarmName") ?: ""
@@ -21,14 +23,14 @@ class SignalActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
-                .replace(R.id.fragmentContainer, SignalFragment(alarmName, alarmId))
+                .replace(R.id.fragmentContainer2, SignalFragment(alarmName, alarmId))
                 .commit()
         }
     }
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (supportFragmentManager.findFragmentById(R.id.fragmentContainer) is SignalFragment) {
+        if (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) is SignalFragment) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-                (supportFragmentManager.findFragmentById(R.id.fragmentContainer) as SignalFragment).dropAndRepeatFragment()
+                (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) as SignalFragment).dropAndRepeatFragment()
                 return true
             }
         }
@@ -36,9 +38,9 @@ class SignalActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (supportFragmentManager.findFragmentById(R.id.fragmentContainer) is SignalFragment) {
+        if (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) is SignalFragment) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                (supportFragmentManager.findFragmentById(R.id.fragmentContainer) as SignalFragment).dropAndRepeatFragment()
+                (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) as SignalFragment).dropAndRepeatFragment()
                 return true
             }
         }

@@ -29,6 +29,7 @@ class MyAlarmManager(
             alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
                 intent.putExtra("alarmName", alarm.name)
                 intent.putExtra("alarmId", alarm.id)
+                intent.action = "com.example.alarm.ALARM_TRIGGERED"
                 PendingIntent.getBroadcast(
                     context,
                     alarm.id.toInt(),

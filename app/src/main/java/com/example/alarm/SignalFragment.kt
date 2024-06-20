@@ -4,6 +4,7 @@ import android.content.Intent
 import android.icu.util.Calendar
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +33,7 @@ class SignalFragment(
         get() = Repositories.alarmRepository as AlarmService
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        Log.d("testSignalFrag", "works!")
         val binding = FragmentSignalBinding.inflate(inflater, container, false)
         val tmp = Calendar.getInstance().time.toString()
         val str = tmp.split(" ")
