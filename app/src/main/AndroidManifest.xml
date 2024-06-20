@@ -20,8 +20,7 @@
         android:theme="@style/Theme.Alarm"
         tools:targetApi="31">
         <activity
-            android:name=".SignalActivity"
-            android:exported="false" />
+            android:name=".SignalActivity" />
 
         <receiver
             android:name=".AlarmReceiver"
