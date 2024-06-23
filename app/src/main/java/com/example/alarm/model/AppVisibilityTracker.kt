@@ -1,13 +1,16 @@
 package com.example.alarm.model
 
-object AppVisibilityTracker {
-    private var isAppVisible = false
+import android.content.Context
+import android.os.PowerManager
 
-    fun isAppRunning(): Boolean {
-        return isAppVisible
+object AppVisibilityTracker {
+    private lateinit var powerManager: PowerManager
+
+    fun initialize(context: Context) {
+        powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     }
 
-    fun setAppVisible(isVisible: Boolean) {
-        isAppVisible = isVisible
+    fun isScreenOn(): Boolean {
+        return powerManager.isInteractive
     }
 }

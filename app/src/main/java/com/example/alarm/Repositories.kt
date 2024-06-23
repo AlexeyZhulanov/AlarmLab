@@ -5,8 +5,6 @@ import androidx.room.Room
 import com.example.alarm.model.AlarmRepository
 import com.example.alarm.model.AlarmService
 import com.example.alarm.room.AppDatabase
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 
 object Repositories {
     private lateinit var applicationContext: Context

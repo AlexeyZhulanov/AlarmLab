@@ -45,8 +45,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 1
-        private const val FULL_SCREEN_INTENT_PERMISSION_REQUEST_CODE = 1001
-        private const val FOREGROUND_PERMISSION_REQUEST_CODE = 1002
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,12 +96,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        AppVisibilityTracker.setAppVisible(true)
     }
 
     override fun onPause() {
         super.onPause()
-        AppVisibilityTracker.setAppVisible(false)
     }
     private fun checkOverlayPermission(context: Context) {
         if (!Settings.canDrawOverlays(context)) {

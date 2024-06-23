@@ -10,8 +10,8 @@ import com.example.alarm.room.SettingsDbEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,6 +50,7 @@ class AlarmService(
                 )
             }
         }
+        Log.d("testAlarmsGet", alarms.toString())
         return@withContext alarms
     }
 
@@ -67,6 +68,7 @@ class AlarmService(
 
     override suspend fun updateEnabled(id: Long, enabled: Int) = withContext(Dispatchers.IO) {
         alarmDao.updateEnabled(AlarmUpdateEnabledTuple(id, enabled))
+        Log.d("testUpdate", "id: $id, enabled: $enabled")
         alarms = getAlarms()
     }
 

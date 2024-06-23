@@ -36,6 +36,7 @@ import kotlinx.coroutines.withContext
 
 const val APP_PREFERENCES = "APP_PREFERENCES"
 const val PREF_INTERVAL = "PREF_INTERVAL"
+const val DISABLE_ID = "DISABLE_ID"
 
 class AlarmFragment : Fragment() {
 
@@ -50,42 +51,7 @@ class AlarmFragment : Fragment() {
         get() = Repositories.alarmRepository as AlarmService
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
-    private var receiver: BroadcastReceiver = object : BroadcastReceiver() {
-        @SuppressLint("NotifyDataSetChanged")
-        override fun onReceive(context: Context?, intent: Intent?) {
-            Log.d("testReceive", "Alarm in fragment")
-            intent?.let {
-                when(it.action) {
-                    "alarm_start" -> {
-                        val name = it.getStringExtra("alarmName")
-                        val id = it.getLongExtra("alarmId", 0)
-                        requireActivity().supportFragmentManager
-                            .beginTransaction()
-                            .replace(R.id.fragmentContainer, SignalFragment(name!!, id))
-                            .addToBackStack("signal")
-                            .commit()
-                    }
-                    "alarm_update" -> {
-                        val id = it.getLongExtra("alarmIdPlug", 0)
-                        val a = Alarm(id)
-                        changeAlarmTime(a, true)
-                        binding.barTextView.text = updateBar()
-                        adapter.notifyDataSetChanged()
-                    }
-                    "alarm_off" -> {
-                        val id = it.getLongExtra("alarmIdOff", 0)
-                        val a = Alarm(id)
-                        changeAlarmTime(a, false)
-                        binding.barTextView.text = updateBar()
-                        adapter.notifyDataSetChanged()
-                    }
-                    else -> {
-                        throw Exception("Wrong Receiver")
-                    }
-                }
-            }
-        }
-    }
+    private var canUpdateMillis: Boolean = true
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
@@ -174,13 +140,20 @@ class AlarmFragment : Fragment() {
                 val layoutManager = LinearLayoutManager(requireContext())
                 binding.recyclerview.layoutManager = layoutManager
                 binding.recyclerview.adapter = adapter
-                updateJob = lifecycleScope.launch {
-                    millisToAlarm = fillAlarmsTime()
-                    while (isActive) {
-                        binding.barTextView.text = updateBar()
-                        delay(30000)
+                    updateJob = lifecycleScope.launch {
+                        if(canUpdateMillis) {
+                        millisToAlarm = fillAlarmsTime()
+                        Log.d("testFill", "WHAT???")
+                        while (isActive) {
+                            binding.barTextView.text = updateBar()
+                            delay(30000)
+                        }
+                        }
+                        else {
+                            delay(30000)
+                            canUpdateMillis = true
+                        }
                     }
-                }
                 alarmsService.addListener(alarmsListener)
                 (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
@@ -261,6 +234,7 @@ class AlarmFragment : Fragment() {
         }
     }
     private fun updateBar(): String {
+        Log.d("testBar", millisToAlarm.toString())
         var txt: String = ""
         if(millisToAlarm.isEmpty()) txt += "Все сигналы\nвыключены"
         else {
@@ -270,36 +244,44 @@ class AlarmFragment : Fragment() {
                 ((longTime - calendar.timeInMillis) / 60000).toInt()
             } else ((longTime - calendar.timeInMillis) / 60000).toInt()
             when(minutes) {
-                0 -> txt += "Сработает менее чем через 1 мин."
-                in 1..59 -> txt += "Сработает через\n$minutes мин."
+                0 -> txt += "Звонок менее чем через 1 мин."
+                in 1..59 -> txt += "Звонок через\n$minutes мин."
                 else -> {
                     val hours = minutes / 60
-                    txt += "Сработает через\n$hours ч. ${minutes % 60} мин."
+                    txt += "Звонок через\n$hours ч. ${minutes % 60} мин."
                 }
             }
         }
         return txt
     }
 
-    private fun registerBroadCastReceiver() {
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
-            receiver,
-            IntentFilter(LOCAL_BROADCAST_KEY)
-        )
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
-            receiver,
-            IntentFilter(LOCAL_BROADCAST_KEY2)
-        )
+    @SuppressLint("NotifyDataSetChanged")
+    private fun updateDisabledAlarm(id: Long) {
+        canUpdateMillis = false
+        val a = Alarm(id)
+        changeAlarmTime(a, true)
+        binding.barTextView.text = updateBar()
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
         super.onResume()
-        registerBroadCastReceiver()
+        val disId = preferences.getLong(DISABLE_ID, -1L)
+        Log.d("testDisId", disId.toString())
+        if(disId != -1L) {
+            updateDisabledAlarm(disId)
+            preferences.edit()
+                .putLong(DISABLE_ID, -1L)
+                .apply()
+            uiScope.launch {
+                alarmsService.getAlarms()
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver)
         updateJob?.cancel()
     }
 }

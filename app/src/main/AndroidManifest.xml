@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -24,7 +25,12 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:taskAffinity=""
-            android:clearTaskOnLaunch="true">
+            android:clearTaskOnLaunch="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:allowEmbedded="true">
         </activity>
 
         <receiver

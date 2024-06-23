@@ -37,8 +37,8 @@
         app:layout_constraintTop_toBottomOf="@+id/topGuideLine"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="10dp"
         android:layout_marginTop="20dp"
         android:orientation="vertical"
         >
@@ -142,7 +142,7 @@
                     android:id="@+id/repeats_infinite"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Infinite"
+                    android:text="Inf"
                     android:textColor="@color/purple_500"
                     android:fontFamily="casual"
                     android:gravity="center"
@@ -197,7 +197,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="минут"
+                android:text="мин."
                 android:layout_marginStart="20dp"
                 android:fontFamily="casual"
                 android:layout_gravity="center"

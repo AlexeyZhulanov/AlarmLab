@@ -1,29 +1,52 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
-import android.app.ActivityManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
+import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import com.example.alarm.model.Alarm
 import com.example.alarm.model.AppVisibilityTracker
+import com.example.alarm.model.MyAlarmManager
+import com.example.alarm.model.Settings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 
 class AlarmReceiver : BroadcastReceiver() {
+
+    private lateinit var preferences: SharedPreferences
+    private lateinit var mediaPlayer: MediaPlayer
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
+
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("testWork", "It works!")
+        AppVisibilityTracker.initialize(context)
         val name = intent.getStringExtra("alarmName")
         val id = intent.getLongExtra("alarmId", 0)
-        if (!AppVisibilityTracker.isAppRunning()) {
+        if (!AppVisibilityTracker.isScreenOn()) {
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+            @Suppress("DEPRECATION") val wakeLock = powerManager.newWakeLock(
+                PowerManager.FULL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE,
+                "MyApp:AlarmWakeLockTag"
+            )
+            wakeLock.acquire(10 * 60 * 1000L /* 10 minutes */)
+
             val signalIntent = Intent(context, SignalActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 putExtra("alarmId", id)
@@ -31,78 +54,87 @@ class AlarmReceiver : BroadcastReceiver() {
             }
             context.applicationContext.startActivity(signalIntent)
 
-        }
-        else {
-//            val localBroadCastIntent = Intent(LOCAL_BROADCAST_KEY)
-//            localBroadCastIntent.putExtra("alarmName",name?:"")
-//            localBroadCastIntent.putExtra("alarmId",id)
-//            Handler(Looper.getMainLooper()).post {
-//                LocalBroadcastManager.getInstance(context).sendBroadcast(localBroadCastIntent)
-//            }
-            showBasicTurnOffNotification(context, name, id)
+            // Release wakeLock after starting the activity
+            wakeLock.release()
+        } else {
+            showBasicTurnOffNotification(context, id)
         }
     }
 
-    private fun showBasicTurnOffNotification(context: Context, name: String?, id: Long) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    @SuppressLint("LaunchActivityFromNotification")
+    private fun showBasicTurnOffNotification(context: Context, id: Long) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "basic_channel_id"
         val channelName = "Basic Notifications"
 
-        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_DEFAULT)
+        val channel =
+            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH).apply {
+                enableLights(true)
+                lightColor = android.graphics.Color.RED
+                enableVibration(true)
+                description = "Your alarm notifications"
+            }
         notificationManager.createNotificationChannel(channel)
 
-        // Intent to handle the "turn off" action
-        val turnOffIntent = Intent(LOCAL_BROADCAST_KEY3) // Replace with your actual receiver
-        turnOffIntent.putExtra("alarmIdOff",id)
-        val turnOffPendingIntent = PendingIntent.getBroadcast(context, 0, turnOffIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        Log.d("testWorkBasic", "It works!")
+        val updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
+            .setInputData(workDataOf("alarmId" to id, "enabled" to 0))
+            .build()
+
+        WorkManager.getInstance(context).enqueue(updateWorkRequest)
+
+
+        mediaPlayer = MediaPlayer.create(context, R.raw.signal)
+        mediaPlayer.isLooping = true
+
+        val filter = IntentFilter(LOCAL_BROADCAST_KEY2)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(turnOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        }
+        val turnOffIntent = Intent(LOCAL_BROADCAST_KEY2).apply {
+            putExtra("alarmId", id)
+        }
+        val turnOffPendingIntent = PendingIntent.getBroadcast(
+            context,
+            0,
+            turnOffIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("App is Running")
             .setContentText("Tap to turn off")
-            .addAction(R.drawable.ic_clear, "Turn Off", turnOffPendingIntent) // Replace icons as needed
+            .addAction(R.drawable.ic_clear, "Turn Off", turnOffPendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setFullScreenIntent(turnOffPendingIntent, true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
+
+        notificationBuilder.setSound(Uri.parse("android.resource://${context.packageName}/${R.raw.signal}"))
+        mediaPlayer.start()
+        mediaPlayer.setOnCompletionListener {
+            mediaPlayer.release() // Clear resources mediaPlayer
+        }
 
         notificationManager.notify(2, notificationBuilder.build())
     }
 
-}
-
-private fun showFullScreenSignalNotification(context: Context, originalIntent: Intent) {
-    val notificationManager =
-        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    val channelId = "signal_channel_id"
-    val channelName = "Signal Notifications"
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel =
-            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
-        notificationManager.createNotificationChannel(channel)
+    private val turnOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val cont = context
+            mediaPlayer.stop()
+            uiScope.launch {
+                val alarmId = intent.getLongExtra("alarmId", 0)
+                val alarmPlug = Alarm(alarmId)
+                preferences = cont.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+                preferences.edit()
+                    .putLong(DISABLE_ID, alarmPlug.id)
+                    .apply()
+                MyAlarmManager(cont, alarmPlug).endProcess()
+            }
+        }
     }
 
-    // Intent to launch SignalActivity and display SignalFragment
-    val signalIntent = Intent(context, SignalActivity::class.java).apply {
-        // Pass data from the original Intent to SignalActivity
-        putExtras(originalIntent)
-    }
-    val pendingIntent = PendingIntent.getActivity(
-        context,
-        0,
-        signalIntent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    val notificationBuilder = NotificationCompat.Builder(context, channelId)
-        .setSmallIcon(R.drawable.ic_launcher_foreground) // Replace with your icon
-        .setContentTitle("Incoming Signal") // Customize as needed
-        .setContentText("Tap to view") // Customize as needed
-        .setPriority(NotificationCompat.PRIORITY_HIGH) // Set high priority
-        .setCategory(NotificationCompat.CATEGORY_CALL) // Use a relevant category
-        .setFullScreenIntent(pendingIntent, true) // Use full-screen intent
-        .setAutoCancel(true)
-
-    notificationManager.notify(1, notificationBuilder.build())
 }
-
-const val LOCAL_BROADCAST_KEY = "alarm_start"
-const val LOCAL_BROADCAST_KEY3 = "alarm_off"

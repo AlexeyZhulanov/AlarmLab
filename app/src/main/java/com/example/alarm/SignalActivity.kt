@@ -3,11 +3,13 @@ package com.example.alarm
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.alarm.databinding.ActivitySignalBinding
+import com.example.alarm.model.AlarmService
 
 class SignalActivity : AppCompatActivity() {
 
@@ -15,9 +17,15 @@ class SignalActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("testSignalAct", "works!")
         binding = ActivitySignalBinding.inflate(layoutInflater).also { setContentView(it.root) }
         setContentView(binding.root)
+        @Suppress("DEPRECATION")
+        window.addFlags(
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                    WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+        )
         val alarmName = intent.getStringExtra("alarmName") ?: ""
         val alarmId = intent.getLongExtra("alarmId", 0)
         if (savedInstanceState == null) {

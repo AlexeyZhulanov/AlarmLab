@@ -39,9 +39,6 @@ class AlarmsAdapter(
     private var checkedPositions: MutableSet<Int> = mutableSetOf()
     private var index = 0
 
-    private val job = Job()
-    private val uiScope = CoroutineScope(Dispatchers.Main + job)
-
     fun getDeleteList(): List<Alarm> {
         val list = mutableListOf<Alarm>()
         for(i in checkedPositions) list.add(alarms[i])
