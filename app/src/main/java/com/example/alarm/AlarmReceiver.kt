@@ -15,6 +15,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -39,6 +41,8 @@ class AlarmReceiver : BroadcastReceiver() {
         AppVisibilityTracker.initialize(context)
         val name = intent.getStringExtra("alarmName")
         val id = intent.getLongExtra("alarmId", 0)
+        val settings = IntentCompat.getParcelableExtra(intent, "settings", Settings::class.java)
+        Log.d("testReceiver", settings.toString())
         if (!AppVisibilityTracker.isScreenOn()) {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
             @Suppress("DEPRECATION") val wakeLock = powerManager.newWakeLock(
@@ -51,6 +55,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 putExtra("alarmId", id)
                 putExtra("alarmName", name)
+                putExtra("settings", settings)
             }
             context.applicationContext.startActivity(signalIntent)
 
@@ -132,7 +137,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 preferences.edit()
                     .putLong(DISABLE_ID, alarmPlug.id)
                     .apply()
-                MyAlarmManager(cont, alarmPlug).endProcess()
+                MyAlarmManager(cont, alarmPlug, Settings(0)).endProcess()
             }
         }
     }

@@ -27,35 +27,30 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SignalFragment(
     val name: String,
-    val id: Long
+    val id: Long,
+    val settings: Settings? = Settings(0)
 ) : Fragment() {
 
     private val alarmPlug = Alarm(id = id, name = name)
-    private val job = Job()
-    private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private lateinit var mediaPlayer: MediaPlayer
     private lateinit var preferences: SharedPreferences
-    private lateinit var settings: Settings
-    private val alarmsService: AlarmService
-        get() = Repositories.alarmRepository as AlarmService
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
         Log.d("testSignFragment", "Works!")
         val binding = FragmentSignalBinding.inflate(inflater, container, false)
-        uiScope.launch {
-            settings = alarmsService.getSettings()
-        }
 
         val updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
             .setInputData(workDataOf("alarmId" to alarmPlug.id, "enabled" to 0))
             .build()
 
         WorkManager.getInstance(requireContext()).enqueue(updateWorkRequest)
-
+        Log.d("testSettingsSignal", settings.toString())
+        Log.d("testAlarmNameSignal", alarmPlug.toString())
         val tmp = Calendar.getInstance().time.toString()
         val str = tmp.split(" ")
         val date = "${str[0]} ${str[1]} ${str[2]}"
@@ -67,19 +62,28 @@ class SignalFragment(
         mediaPlayer = MediaPlayer.create(context, R.raw.signal)
         mediaPlayer.isLooping = true
         mediaPlayer.start()
-        binding.pulsator.start()
         val fragmentContext = requireContext()
-        binding.repeatButton.setOnClickListener {
-            dropAndRepeatFragment()
+        if(settings!!.repetitions <= 0) {
+            binding.repeatButton.visibility = View.GONE
+        }
+        else {
+            binding.repeatButton.setOnClickListener {
+                binding.pulsator.start()
+                settings.repetitions -= 1
+                Log.d("testRepeat", settings.toString())
+                dropAndRepeatFragment()
+            }
         }
         binding.slideButton.onSlideCompleteListener = object : SlideToActView.OnSlideCompleteListener {
             override fun onSlideComplete(view: SlideToActView) {
-                uiScope.launch {
-                    preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-                    preferences.edit()
-                        .putLong(DISABLE_ID, alarmPlug.id)
-                        .apply()
-                    MyAlarmManager(fragmentContext, alarmPlug).endProcess()
+                lifecycleScope.launch {
+                    withContext(Dispatchers.IO) {
+                        preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+                        preferences.edit()
+                            .putLong(DISABLE_ID, alarmPlug.id)
+                            .apply()
+                    }
+                    MyAlarmManager(fragmentContext, alarmPlug, Settings(0)).endProcess()
                 }
                 requireActivity().onBackPressedDispatcher.onBackPressed()
             }
@@ -89,14 +93,28 @@ class SignalFragment(
     }
 
     fun dropAndRepeatFragment() {
-        uiScope.launch {
-                preferences.edit()
-                    .putLong(DISABLE_ID, alarmPlug.id)
-                    .apply()
-                MyAlarmManager(context, alarmPlug).endProcess()
-                MyAlarmManager(context, alarmPlug).repeatProcess(settings)
+        lifecycleScope.launch {
+                val ctx = requireContextOrNull()
+                if (ctx == null) {
+                    Log.e("dropAndRepeatFragment", "Context is null")
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+                    preferences.edit()
+                        .putLong(DISABLE_ID, alarmPlug.id)
+                        .apply()
+                }
+                Log.d("testSettingsRepeat", settings.toString())
+                MyAlarmManager(ctx, alarmPlug, Settings(0)).endProcess()
+                MyAlarmManager(ctx, alarmPlug, settings!!).repeatProcess()
                 requireActivity().onBackPressedDispatcher.onBackPressed()
-            }
+        }
+    }
+
+    // Helper function to safely get context
+    private fun Fragment.requireContextOrNull(): Context? {
+        return if (isAdded) requireContext() else null
     }
 
     override fun onDestroyView() {

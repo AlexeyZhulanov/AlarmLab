@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.icu.util.Calendar
 import android.icu.util.ULocale
+import android.util.Log
 import android.widget.Toast
 import com.example.alarm.AlarmReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -16,30 +17,37 @@ import kotlinx.coroutines.withContext
 
 class MyAlarmManager(
     private val context: Context?,
-    val alarm: Alarm
+    val alarm: Alarm,
+    val settings: Settings
 ) {
-    private var alarmManager: AlarmManager? = null
-    private var alarmIntent: PendingIntent
+    private lateinit var alarmManager: AlarmManager
+    private lateinit var alarmIntent: PendingIntent
     private val calendar = Calendar.getInstance()
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Default + job)
 
-    init {
-            alarmManager = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
+    private fun initialFunc(isEnd: Boolean) {
+        alarmManager = context?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmIntent = Intent(context, AlarmReceiver::class.java).let { intent ->
+            if(!isEnd) {
                 intent.putExtra("alarmName", alarm.name)
                 intent.putExtra("alarmId", alarm.id)
-                intent.action = "com.example.alarm.ALARM_TRIGGERED"
-                PendingIntent.getBroadcast(
-                    context,
-                    alarm.id.toInt(),
-                    intent,
-                    PendingIntent.FLAG_IMMUTABLE
-                )
+                Log.d("testSettingsInit", settings.toString())
+                intent.putExtra("settings", settings)
             }
+            intent.action = "com.example.alarm.ALARM_TRIGGERED"
+            PendingIntent.getBroadcast(
+                context,
+                alarm.id.toInt(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
     }
 
     suspend fun startProcess() {
+        initialFunc(false)
+        Log.d("testStart", settings.toString())
         val part = uiScope.async {
             calendar.set(Calendar.HOUR_OF_DAY, alarm.timeHours)
             calendar.set(Calendar.MINUTE, alarm.timeMinutes)
@@ -49,7 +57,7 @@ class MyAlarmManager(
                 calendar.timeInMillis + 86400000
             } else calendar.timeInMillis
 
-            alarmManager?.setAlarmClock(
+            alarmManager.setAlarmClock(
                 AlarmManager.AlarmClockInfo(longTime, alarmIntent),
                 alarmIntent
             )
@@ -73,16 +81,20 @@ class MyAlarmManager(
     }
 
     suspend fun endProcess() = withContext(Dispatchers.Default) {
-        alarmManager?.cancel(alarmIntent)
+        initialFunc(true)
+        alarmManager.cancel(alarmIntent)
     }
 
     suspend fun restartProcess() = withContext(Dispatchers.Main + job) {
         endProcess()
         startProcess()
     }
-    suspend fun repeatProcess(settings: Settings) = withContext(Dispatchers.Default) {
+    suspend fun repeatProcess() = withContext(Dispatchers.Default) {
+        initialFunc(false)
         val calendar = Calendar.getInstance(ULocale.ROOT)
-        val time = calendar.timeInMillis + settings.interval.toLong()*60000
-        alarmManager?.setAlarmClock(AlarmManager.AlarmClockInfo(time, alarmIntent), alarmIntent)
+        Log.d("testSettingsRepeat", settings.toString())
+        //val time = calendar.timeInMillis + settings.interval.toLong()*60000
+        val time = calendar.timeInMillis + 10000
+        alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(time, alarmIntent), alarmIntent)
     }
 }

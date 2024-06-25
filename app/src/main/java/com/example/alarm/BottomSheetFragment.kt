@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,6 +13,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 interface BottomSheetListener {
@@ -69,7 +71,9 @@ class BottomSheetFragment(
         )
         uiScope.launch {
             alarmsService.addAlarm(alarm)
-            MyAlarmManager(context, alarm).startProcess()
+            val settings = async { alarmsService.getSettings() }
+            MyAlarmManager(context, alarm, settings.await()).startProcess()
+            Log.d("testSettingsAddAlarm", settings.await().toString())
             bottomSheetListener.onAddAlarm(alarm)
             dismiss()
         }
@@ -84,7 +88,10 @@ class BottomSheetFragment(
         )
         uiScope.launch {
             alarmsService.updateAlarm(alarmNew)
-            if (oldAlarm.enabled == 1) MyAlarmManager(context, alarmNew).restartProcess()
+            if (oldAlarm.enabled == 1) {
+                val settings = async { alarmsService.getSettings() }
+                MyAlarmManager(context, alarmNew, settings.await()).restartProcess()
+            }
             bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew)
             dismiss()
         }

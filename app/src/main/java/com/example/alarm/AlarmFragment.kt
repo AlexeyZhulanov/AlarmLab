@@ -65,11 +65,13 @@ class AlarmFragment : Fragment() {
                             var bool = 0
                             if (alarm.enabled == 0) { //turn on
                                 bool = 1
-                                MyAlarmManager(context, alarm).startProcess()
+                                val s = async { alarmsService.getSettings() }
+                                MyAlarmManager(context, alarm, s.await()).startProcess()
+                                Log.d("testSettingsEnabled", s.await().toString())
                                 changeAlarmTime(alarm, false)
                                 binding.barTextView.text = updateBar()
                             } else {
-                                MyAlarmManager(context, alarm).endProcess()
+                                MyAlarmManager(context, alarm, Settings(0)).endProcess()
                                 changeAlarmTime(alarm, true)
                                 binding.barTextView.text = updateBar()
                             }

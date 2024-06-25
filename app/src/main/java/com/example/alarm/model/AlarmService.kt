@@ -78,7 +78,7 @@ class AlarmService(
 
     override suspend fun deleteAlarms(list: List<Alarm>, context: Context?) = withContext(Dispatchers.IO) {
         for(l in list) {
-            if(l.enabled == 1) MyAlarmManager(context, l).endProcess()
+            if(l.enabled == 1) MyAlarmManager(context, l, Settings(0)).endProcess()
             alarmDao.deleteAlarm(AlarmDbEntity.fromUserInput(l))
         }
         alarms = getAlarms()
@@ -89,7 +89,7 @@ class AlarmService(
         for(alarm in alarms) {
             if (alarm.enabled == 1) {
                 alarmDao.updateEnabled(AlarmUpdateEnabledTuple(alarm.id, 0))
-                MyAlarmManager(context, alarm).endProcess()
+                MyAlarmManager(context, alarm, Settings(0)).endProcess()
             }
         }
         alarms = getAlarms()

@@ -6,10 +6,12 @@ import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.IntentCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.alarm.databinding.ActivitySignalBinding
 import com.example.alarm.model.AlarmService
+import com.example.alarm.model.Settings
 
 class SignalActivity : AppCompatActivity() {
 
@@ -28,10 +30,12 @@ class SignalActivity : AppCompatActivity() {
         )
         val alarmName = intent.getStringExtra("alarmName") ?: ""
         val alarmId = intent.getLongExtra("alarmId", 0)
+        val settings = IntentCompat.getParcelableExtra(intent, "settings", Settings::class.java)
+        Log.d("testSignActivity", settings.toString())
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
-                .replace(R.id.fragmentContainer2, SignalFragment(alarmName, alarmId))
+                .replace(R.id.fragmentContainer2, SignalFragment(alarmName, alarmId, settings))
                 .commit()
         }
     }
