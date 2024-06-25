@@ -36,7 +36,6 @@ import kotlinx.coroutines.withContext
 
 const val APP_PREFERENCES = "APP_PREFERENCES"
 const val PREF_INTERVAL = "PREF_INTERVAL"
-const val DISABLE_ID = "DISABLE_ID"
 
 class AlarmFragment : Fragment() {
 
@@ -51,7 +50,6 @@ class AlarmFragment : Fragment() {
         get() = Repositories.alarmRepository as AlarmService
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
-    private var canUpdateMillis: Boolean = true
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
@@ -142,20 +140,6 @@ class AlarmFragment : Fragment() {
                 val layoutManager = LinearLayoutManager(requireContext())
                 binding.recyclerview.layoutManager = layoutManager
                 binding.recyclerview.adapter = adapter
-                    updateJob = lifecycleScope.launch {
-                        if(canUpdateMillis) {
-                        millisToAlarm = fillAlarmsTime()
-                        Log.d("testFill", "WHAT???")
-                        while (isActive) {
-                            binding.barTextView.text = updateBar()
-                            delay(30000)
-                        }
-                        }
-                        else {
-                            delay(30000)
-                            canUpdateMillis = true
-                        }
-                    }
                 alarmsService.addListener(alarmsListener)
                 (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
@@ -187,6 +171,17 @@ class AlarmFragment : Fragment() {
                         }
                     }).show(childFragmentManager, "AddTag")
                 }
+        alarmsService.initCompleted.observe(viewLifecycleOwner) { initCompleted ->
+            if (initCompleted) {
+                updateJob = lifecycleScope.launch {
+                    millisToAlarm = fillAlarmsTime()
+                    while (isActive) {
+                        binding.barTextView.text = updateBar()
+                        delay(30000)
+                    }
+                }
+            }
+        }
         return binding.root
     }
 
@@ -256,30 +251,8 @@ class AlarmFragment : Fragment() {
         }
         return txt
     }
-
-    @SuppressLint("NotifyDataSetChanged")
-    private fun updateDisabledAlarm(id: Long) {
-        canUpdateMillis = false
-        val a = Alarm(id)
-        changeAlarmTime(a, true)
-        binding.barTextView.text = updateBar()
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
         super.onResume()
-        val disId = preferences.getLong(DISABLE_ID, -1L)
-        Log.d("testDisId", disId.toString())
-        if(disId != -1L) {
-            updateDisabledAlarm(disId)
-            preferences.edit()
-                .putLong(DISABLE_ID, -1L)
-                .apply()
-            uiScope.launch {
-                alarmsService.getAlarms()
-                adapter.notifyDataSetChanged()
-            }
-        }
     }
 
     override fun onPause() {

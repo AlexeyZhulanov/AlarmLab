@@ -32,7 +32,6 @@ import kotlinx.coroutines.launch
 
 class AlarmReceiver : BroadcastReceiver() {
 
-    private lateinit var preferences: SharedPreferences
     private lateinit var mediaPlayer: MediaPlayer
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
@@ -133,10 +132,6 @@ class AlarmReceiver : BroadcastReceiver() {
             uiScope.launch {
                 val alarmId = intent.getLongExtra("alarmId", 0)
                 val alarmPlug = Alarm(alarmId)
-                preferences = cont.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-                preferences.edit()
-                    .putLong(DISABLE_ID, alarmPlug.id)
-                    .apply()
                 MyAlarmManager(cont, alarmPlug, Settings(0)).endProcess()
             }
         }

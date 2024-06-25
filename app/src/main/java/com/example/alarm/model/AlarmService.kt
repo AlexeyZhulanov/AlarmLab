@@ -2,6 +2,8 @@ package com.example.alarm.model
 
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.example.alarm.room.AlarmDao
 import com.example.alarm.room.AlarmDbEntity
 import com.example.alarm.room.AlarmUpdateEnabledTuple
@@ -28,9 +30,13 @@ class AlarmService(
     private val uiScope = CoroutineScope(Dispatchers.IO + job)
     private var settings = Settings(0)
 
+    private val _initCompleted = MutableLiveData<Boolean>()
+    val initCompleted: LiveData<Boolean> get() = _initCompleted
+
     init {
         uiScope.launch {
             alarms = getAlarms()
+            _initCompleted.postValue(true)
         }
     }
 
