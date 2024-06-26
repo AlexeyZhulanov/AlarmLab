@@ -63,7 +63,7 @@ class AlarmFragment : Fragment() {
                             var bool = 0
                             if (alarm.enabled == 0) { //turn on
                                 bool = 1
-                                val s = async { alarmsService.getSettings() }
+                                val s = async(Dispatchers.IO) { alarmsService.getSettings() }
                                 MyAlarmManager(context, alarm, s.await()).startProcess()
                                 Log.d("testSettingsEnabled", s.await().toString())
                                 changeAlarmTime(alarm, false)
