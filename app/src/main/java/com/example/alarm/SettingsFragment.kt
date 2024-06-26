@@ -130,7 +130,7 @@ class SettingsFragment : Fragment() {
             updatePrefs(10)
         }
         binding.changeColorTheme.setOnClickListener {
-            //todo
+            showColorThemePopupMenu(it, container as ViewGroup)
         }
         binding.changeWallpaper.setOnClickListener {
             showWallpapersPopupMenu(it, container as ViewGroup)
@@ -205,6 +205,40 @@ class SettingsFragment : Fragment() {
         )
 
         val adapter = PopupMenuWallpaperAdapter(menuItems) { menuItem ->
+            // Обработка клика по элементу меню
+            popupWindow.dismiss()
+        }
+
+        recyclerView.adapter = adapter
+
+        popupWindow.showAsDropDown(view)
+    }
+    private fun showColorThemePopupMenu(view: View, container: ViewGroup) {
+        val inflater = layoutInflater
+        val popupView = inflater.inflate(R.layout.popup_menu_wallpaper_layout, container, false)
+
+        val popupWindow = PopupWindow(
+            popupView,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            true
+        )
+
+        popupWindow.showAtLocation(requireView(), Gravity.CENTER, 0, 0)
+        val recyclerView = popupView.findViewById<RecyclerView>(R.id.recycler_view)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        val menuItems = listOf(
+            ColorThemeMenuItem(R.color.color1_main, R.color.color1_secondary),
+            ColorThemeMenuItem(R.color.color2_main, R.color.color2_secondary),
+            ColorThemeMenuItem(R.color.color3_main, R.color.color3_secondary),
+            ColorThemeMenuItem(R.color.color4_main, R.color.color4_secondary),
+            ColorThemeMenuItem(R.color.color5_main, R.color.color5_secondary),
+            ColorThemeMenuItem(R.color.color6_main, R.color.color6_secondary),
+            ColorThemeMenuItem(R.color.color7_main, R.color.color7_secondary),
+            ColorThemeMenuItem(R.color.color8_main, R.color.color8_secondary)
+        )
+        val adapter = ColorThemeMenuAdapter(menuItems) { menuItem ->
             // Обработка клика по элементу меню
             popupWindow.dismiss()
         }

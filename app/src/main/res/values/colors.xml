@@ -9,4 +9,21 @@
     <color name="white">#FFFFFFFF</color>
     <color name="orange">#FF9800</color>
     <color name="grey">#808080</color>
+    <color name="color1_main">#808080</color>
+    <color name="color1_secondary">#FF6200EE</color>"
+    <color name="color2_main">#808080</color>
+    <color name="color2_secondary">#FF6200EE</color>"
+    <color name="color3_main">#808080</color>
+    <color name="color3_secondary">#FF6200EE</color>"
+    <color name="color4_main">#808080</color>
+    <color name="color4_secondary">#FF6200EE</color>"
+    <color name="color5_main">#808080</color>
+    <color name="color5_secondary">#FF6200EE</color>"
+    <color name="color6_main">#808080</color>
+    <color name="color6_secondary">#FF6200EE</color>"
+    <color name="color7_main">#808080</color>
+    <color name="color7_secondary">#FF6200EE</color>"
+    <color name="color8_main">#808080</color>
+    <color name="color8_secondary">#FF6200EE</color>"
+
 </resources>
