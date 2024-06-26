@@ -192,6 +192,7 @@ class SettingsFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         val menuItems = listOf(
+            MenuItemData("Classic", R.drawable.whitequad),
             MenuItemData("1.", R.drawable.wallpaper1),
             MenuItemData("2.", R.drawable.wallpaper2),
             MenuItemData("3.", R.drawable.wallpaper3),
@@ -229,6 +230,7 @@ class SettingsFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         val menuItems = listOf(
+            ColorThemeMenuItem(R.color.colorPrimary, R.color.colorAccent),
             ColorThemeMenuItem(R.color.color1_main, R.color.color1_secondary),
             ColorThemeMenuItem(R.color.color2_main, R.color.color2_secondary),
             ColorThemeMenuItem(R.color.color3_main, R.color.color3_secondary),

@@ -19,6 +19,7 @@
         android:autoSizeStepGranularity="2sp"
         android:textStyle="bold|italic"
         android:gravity="center"
+        android:textColor="?attr/colorAccent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@id/intervalTextView"

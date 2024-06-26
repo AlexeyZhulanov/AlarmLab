@@ -21,6 +21,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@+id/timeGuideline"
         tools:text="18:45"
+        android:textColor="?attr/colorAccent"
         android:fontFamily="casual"
         android:gravity="center"
         android:autoSizeTextType="uniform"
@@ -98,7 +99,7 @@
         app:layout_constraintBottom_toTopOf="@id/buttonGuideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:pulse_color="#CA3D3D"
+        app:pulse_color="?attr/colorAccent"
         app:pulse_count="4"
         app:pulse_duration="2500"
         app:pulse_interpolator="AccelerateDecelerate"
@@ -111,7 +112,8 @@
             android:layout_width="wrap_content"
             android:layout_height="150dp"
             android:layout_centerInParent="true"
-            android:textColor="@color/purple_500"
+            android:textColor="?attr/colorAccent"
+            android:backgroundTint="?attr/colorPrimary"
             android:textSize="26sp"
             android:text="ПОВТОР" />
     </pl.bclogic.pulsator4droid.library.PulsatorLayout>
@@ -127,7 +129,8 @@
             android:layout_marginHorizontal="30dp"
             app:area_margin="-8dp"
             android:layout_gravity="center"
-            app:inner_color="@color/purple_500"
+            app:inner_color="?attr/colorAccent"
+            app:outer_color="?attr/colorPrimary"
             app:text_size="30sp"
             app:bounce_on_start="true"
             app:text="Отключить" />

@@ -63,8 +63,8 @@ class SignalFragment(
             binding.repeatButton.visibility = View.GONE
         }
         else {
+            binding.pulsator.start()
             binding.repeatButton.setOnClickListener {
-                binding.pulsator.start()
                 settings.repetitions -= 1
                 dropAndRepeatFragment()
             }

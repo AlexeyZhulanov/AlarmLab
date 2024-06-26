@@ -13,6 +13,8 @@ import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import android.provider.Settings
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -71,9 +73,20 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.unregisterFragmentLifecycleCallbacks(fragmentListener)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.alarm_menu, menu)
+        val color = ContextCompat.getColor(this, R.color.colorAccent)
+        applyMenuTextColor(menu, color)
         return true
+    }
+
+    private fun applyMenuTextColor(menu: Menu, color: Int) {
+        for (i in 0 until menu.size()) {
+            val menuItem = menu.getItem(i)
+            val spannableTitle = SpannableString(menuItem.title)
+            spannableTitle.setSpan(ForegroundColorSpan(color), 0, spannableTitle.length, 0)
+            menuItem.title = spannableTitle
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
