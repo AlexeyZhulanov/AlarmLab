@@ -114,8 +114,10 @@
             android:layout_centerInParent="true"
             android:textColor="?attr/colorAccent"
             android:backgroundTint="?attr/colorPrimary"
-            android:textSize="26sp"
-            android:text="ПОВТОР" />
+            android:textSize="28sp"
+            android:fontFamily="casual"
+            android:textStyle="bold|italic"
+            android:text="@string/repeat_caps" />
     </pl.bclogic.pulsator4droid.library.PulsatorLayout>
 
         <com.ncorti.slidetoact.SlideToActView

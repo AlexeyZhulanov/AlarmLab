@@ -49,8 +49,7 @@ class SettingsFragment : Fragment() {
         if(wallpaper != "") {
             binding.wallpaperName.text = wallpaper
             val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
-            if(resId != 0)
-            binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), resId)
+            if(resId != 0) binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), resId)
         }
         else {
             binding.wallpaperName.text = "Classic"
@@ -74,21 +73,6 @@ class SettingsFragment : Fragment() {
             }
             globalId = settings.id
         }
-        fun readSettings(id: Long): Settings {
-            val settings = Settings(
-                id = id,
-                melody = binding.melodyName.text.toString(),
-                vibration = if(binding.switchVibration.isChecked) 1 else 0,
-                interval = if(binding.interval3.isChecked) 3
-                    else if(binding.interval5.isChecked) 5
-                    else 10,
-                repetitions = if(binding.repeats3.isChecked) 3
-                        else if(binding.repeats5.isChecked) 5
-                        else 100,
-                disableType = 0 //todo
-            )
-            return settings
-        }
         binding.changeMelody.setOnClickListener {
             showSignalsPopupMenu(it)
         }
@@ -96,23 +80,32 @@ class SettingsFragment : Fragment() {
             uiScope.launch {
                 val settings = async(Dispatchers.IO) { alarmsService.getSettings() }
                 when (settings.await().melody) {
-                    "melody1" -> {
+                    getString(R.string.melody1) -> {
                         //todo
                     }
-                    "melody2" -> {
+                    getString(R.string.melody2) -> {
                         //todo
                     }
-                    "melody3" -> {
+                    getString(R.string.melody3) -> {
                         //todo
                     }
-                    "melody4" -> {
+                    getString(R.string.melody4) -> {
                         //todo
                     }
-                    "melody5" -> {
+                    getString(R.string.melody5) -> {
+                        //todo
+                    }
+                    getString(R.string.melody6) -> {
+                        //todo
+                    }
+                    getString(R.string.melody7) -> {
+                        //todo
+                    }
+                    getString(R.string.melody8) -> {
                         //todo
                     }
                     else -> {
-                        //todo
+                        Toast.makeText(requireContext(), "Melody not found", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -157,6 +150,22 @@ class SettingsFragment : Fragment() {
         return binding.root
     }
 
+    private fun readSettings(id: Long): Settings {
+        val settings = Settings(
+            id = id,
+            melody = binding.melodyName.text.toString(),
+            vibration = if(binding.switchVibration.isChecked) 1 else 0,
+            interval = if(binding.interval3.isChecked) 3
+            else if(binding.interval5.isChecked) 5
+            else 10,
+            repetitions = if(binding.repeats3.isChecked) 3
+            else if(binding.repeats5.isChecked) 5
+            else 100,
+            disableType = 0 //todo
+        )
+        return settings
+    }
+
     private fun updatePrefs(interval: Int) {
         uiScope.launch {
             preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
@@ -169,29 +178,24 @@ class SettingsFragment : Fragment() {
         val popupMenu = PopupMenu(requireContext(), view)
         popupMenu.menuInflater.inflate(R.menu.melody_menu, popupMenu.menu)
         popupMenu.setOnMenuItemClickListener { menuItem: MenuItem ->
-            when (menuItem.itemId) {
-                R.id.melody1 -> {
-                    // Handle item1 click
-                    true
-                }
-                R.id.melody2 -> {
-                    // Handle item2 click
-                    true
-                }
-                R.id.melody3 -> {
-                    // Handle item3 click
-                    true
-                }
-                R.id.melody4 -> {
-                    // Handle item4 click
-                    true
-                }
-                R.id.melody5 -> {
-                    // Handle item5 click
-                    true
-                }
-                else -> false
+            val newMelodyName = when (menuItem.itemId) {
+                R.id.melody1 -> getString(R.string.melody1)
+                R.id.melody2 -> getString(R.string.melody2)
+                R.id.melody3 -> getString(R.string.melody3)
+                R.id.melody4 -> getString(R.string.melody4)
+                R.id.melody5 -> getString(R.string.melody5)
+                R.id.melody6 -> getString(R.string.melody6)
+                R.id.melody7 -> getString(R.string.melody7)
+                R.id.melody8 -> getString(R.string.melody8)
+                else -> null
             }
+
+            newMelodyName?.let { name ->
+                binding.melodyName.text = name
+                val s = readSettings(globalId)
+                uiScope.launch { alarmsService.updateSettings(s) }
+                true
+            } ?: false
         }
         popupMenu.show()
     }

@@ -2,17 +2,26 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/melody1"
-        android:title="Item 1"/>
+        android:title="@string/melody1"/>
     <item
         android:id="@+id/melody2"
-        android:title="Item 2"/>
+        android:title="@string/melody2"/>
     <item
         android:id="@+id/melody3"
-        android:title="Item 3"/>
+        android:title="@string/melody3"/>
     <item
         android:id="@+id/melody4"
-        android:title="Item 4"/>
+        android:title="@string/melody4"/>
     <item
         android:id="@+id/melody5"
-        android:title="Item 5"/>
+        android:title="@string/melody5"/>
+    <item
+        android:id="@+id/melody6"
+        android:title="@string/melody6"/>
+    <item
+        android:id="@+id/melody7"
+        android:title="@string/melody7"/>
+    <item
+        android:id="@+id/melody8"
+        android:title="@string/melody8"/>
 </menu>

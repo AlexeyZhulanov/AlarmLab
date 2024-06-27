@@ -35,7 +35,7 @@
                 android:padding="20dp"
                 android:gravity="center"
                 android:textColor="?attr/colorAccent"
-                android:text="Все сигналы\nвыключены"
+                android:text="@string/all_alarms_off"
                 android:autoSizeTextType="uniform"
                 android:autoSizeMinTextSize="10sp"
                 android:autoSizeMaxTextSize="100sp"
@@ -49,7 +49,7 @@
                 android:layout_height="?attr/actionBarSize"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
                 app:layout_collapseMode="pin"
-                android:title="Будильник"
+                android:title="@string/app_name"
                 >
             </androidx.appcompat.widget.Toolbar>
         </com.google.android.material.appbar.CollapsingToolbarLayout>
@@ -89,7 +89,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
-        android:contentDescription="add"
+        android:contentDescription="@string/add"
         android:layout_marginBottom="10dp"
         app:layout_constraintBottom_toTopOf="@+id/bottomGuideLine"
         app:layout_constraintStart_toStartOf="parent"
@@ -110,7 +110,7 @@
         app:layout_constraintBottom_toTopOf="@+id/bottomGuideLine"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:contentDescription="delete"
+        android:contentDescription="@string/delete"
         android:src="@drawable/ic_delete_alarm"
         app:tint="?attr/colorPrimary"
         android:backgroundTint="?attr/colorAccent"
@@ -123,7 +123,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAllCaps="false"
-        android:text="Будильник"
+        android:text="@string/app_name"
         android:autoSizeTextType="uniform"
         android:autoSizeMinTextSize="10sp"
         android:autoSizeMaxTextSize="22sp"
@@ -150,7 +150,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/button"
         app:layout_constraintEnd_toStartOf="@+id/button4"
-        android:text="Таймер" />
+        android:text="@string/timer" />
 
     <Button
         android:id="@+id/button4"
@@ -166,6 +166,6 @@
         app:layout_constraintTop_toBottomOf="@+id/bottomGuideLine"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/button3"
-        android:text="Секундомер" />
+        android:text="@string/stopwatch" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
