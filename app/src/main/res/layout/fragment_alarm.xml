@@ -2,7 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/alarm_layout"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     >
 
@@ -97,6 +97,7 @@
         android:src="@drawable/ic_add_alarm"
         app:tint="?attr/colorPrimary"
         android:backgroundTint="?attr/colorAccent"
+        app:borderWidth="0dp"
         android:visibility="visible" />
 
 
@@ -113,6 +114,7 @@
         android:src="@drawable/ic_delete_alarm"
         app:tint="?attr/colorPrimary"
         android:backgroundTint="?attr/colorAccent"
+        app:borderWidth="0dp"
         android:visibility="gone"
         />
 

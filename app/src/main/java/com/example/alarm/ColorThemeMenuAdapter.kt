@@ -7,7 +7,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 data class ColorThemeMenuItem(
     val mainColorRes: Int,
-    val secondColorRes: Int
+    val secondColorRes: Int,
+    val themeNumber: Int
 )
 
 class ColorThemeMenuAdapter(

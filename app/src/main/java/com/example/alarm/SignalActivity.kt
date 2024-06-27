@@ -1,5 +1,6 @@
 package com.example.alarm
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -18,6 +19,20 @@ class SignalActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySignalBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val preferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+        val themeNumber = preferences.getInt(PREF_THEME, 0)
+        when(themeNumber) {
+            0 -> setTheme(R.style.Theme_Alarm)
+            1 -> setTheme(R.style.Theme1)
+            2 -> setTheme(R.style.Theme2)
+            3 -> setTheme(R.style.Theme3)
+            4 -> setTheme(R.style.Theme4)
+            5 -> setTheme(R.style.Theme5)
+            6 -> setTheme(R.style.Theme6)
+            7 -> setTheme(R.style.Theme7)
+            8 -> setTheme(R.style.Theme8)
+            else -> setTheme(R.style.Theme_Alarm)
+        }
         super.onCreate(savedInstanceState)
         binding = ActivitySignalBinding.inflate(layoutInflater).also { setContentView(it.root) }
         setContentView(binding.root)

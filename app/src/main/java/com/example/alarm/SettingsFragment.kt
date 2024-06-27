@@ -1,9 +1,12 @@
 package com.example.alarm
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.preference.PreferenceManager
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -12,6 +15,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.PopupWindow
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
@@ -30,14 +34,29 @@ class SettingsFragment : Fragment() {
 
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
+    private lateinit var binding: FragmentSettingsBinding
     private val alarmsService: AlarmService
         get() = Repositories.alarmRepository as AlarmService
     private var globalId: Long = 0
     private lateinit var preferences: SharedPreferences
 
+    @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        val binding = FragmentSettingsBinding.inflate(inflater, container, false)
-        //binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), R.drawable.wallpaper1)
+        binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+        preferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
+        val wallpaper = preferences.getString(PREF_WALLPAPER, "")
+        if(wallpaper != "") {
+            binding.wallpaperName.text = wallpaper
+            val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
+            if(resId != 0)
+            binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), resId)
+        }
+        else {
+            binding.wallpaperName.text = "Classic"
+        }
+        val themeNumber = preferences.getInt(PREF_THEME, 0)
+        if(themeNumber != 0) binding.colorThemeName.text = "Theme ${themeNumber+1}" else binding.colorThemeName.text = "Classic"
         uiScope.launch {
             val settings = alarmsService.getSettings()
             binding.melodyName.text = settings.melody
@@ -204,9 +223,26 @@ class SettingsFragment : Fragment() {
             MenuItemData("9.", R.drawable.wallpaper9),
             MenuItemData("10.", R.drawable.wallpaper10)
         )
-
+        var temp = ""
         val adapter = PopupMenuWallpaperAdapter(menuItems) { menuItem ->
-            // Обработка клика по элементу меню
+            temp = when(menuItem.title) {
+                "Classic" -> ""
+                "1." -> "wallpaper1"
+                "2." -> "wallpaper2"
+                "3." -> "wallpaper3"
+                "4." -> "wallpaper4"
+                "5." -> "wallpaper5"
+                "6." -> "wallpaper6"
+                "7." -> "wallpaper7"
+                "8." -> "wallpaper8"
+                "9." -> "wallpaper9"
+                "10." -> "wallpaper10"
+                else -> ""
+            }
+            preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+            preferences.edit()
+                .putString(PREF_WALLPAPER, temp)
+                .apply()
             popupWindow.dismiss()
         }
 
@@ -230,18 +266,22 @@ class SettingsFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         val menuItems = listOf(
-            ColorThemeMenuItem(R.color.colorPrimary, R.color.colorAccent),
-            ColorThemeMenuItem(R.color.color1_main, R.color.color1_secondary),
-            ColorThemeMenuItem(R.color.color2_main, R.color.color2_secondary),
-            ColorThemeMenuItem(R.color.color3_main, R.color.color3_secondary),
-            ColorThemeMenuItem(R.color.color4_main, R.color.color4_secondary),
-            ColorThemeMenuItem(R.color.color5_main, R.color.color5_secondary),
-            ColorThemeMenuItem(R.color.color6_main, R.color.color6_secondary),
-            ColorThemeMenuItem(R.color.color7_main, R.color.color7_secondary),
-            ColorThemeMenuItem(R.color.color8_main, R.color.color8_secondary)
+            ColorThemeMenuItem(R.color.colorPrimary, R.color.colorAccent, 0),
+            ColorThemeMenuItem(R.color.color1_main, R.color.color1_secondary, 1),
+            ColorThemeMenuItem(R.color.color2_main, R.color.color2_secondary, 2),
+            ColorThemeMenuItem(R.color.color3_main, R.color.color3_secondary, 3),
+            ColorThemeMenuItem(R.color.color4_main, R.color.color4_secondary, 4),
+            ColorThemeMenuItem(R.color.color5_main, R.color.color5_secondary, 5),
+            ColorThemeMenuItem(R.color.color6_main, R.color.color6_secondary, 6),
+            ColorThemeMenuItem(R.color.color7_main, R.color.color7_secondary, 7),
+            ColorThemeMenuItem(R.color.color8_main, R.color.color8_secondary, 8)
         )
         val adapter = ColorThemeMenuAdapter(menuItems) { menuItem ->
-            // Обработка клика по элементу меню
+            preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+            preferences.edit()
+                .putInt(PREF_THEME, menuItem.themeNumber)
+                .apply()
+            requireActivity().recreate()
             popupWindow.dismiss()
         }
 
@@ -249,4 +289,30 @@ class SettingsFragment : Fragment() {
 
         popupWindow.showAsDropDown(view)
     }
+    @SuppressLint("DiscouragedApi")
+    private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        if (key == PREF_WALLPAPER) {
+            val tmp = sharedPreferences.getString(PREF_WALLPAPER, "")
+            binding.wallpaperName.text = tmp
+            if(tmp != "") {
+                val resId = resources.getIdentifier(tmp, "drawable", requireContext().packageName)
+                if(resId != 0)
+                    binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), resId)
+            }
+            else {
+                binding.settingsLayout.background = null
+                binding.wallpaperName.text = "Classic"
+            }
+        }
+    }
+
+
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        val sharedPreferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
+    }
 }
+const val PREF_WALLPAPER = "PREF_WALLPAPER"
+const val PREF_THEME = "PREF_THEME"

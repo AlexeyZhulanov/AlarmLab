@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -51,10 +52,17 @@ class AlarmFragment : Fragment() {
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
 
+    @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
             binding = FragmentAlarmBinding.inflate(inflater, container, false)
                 preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+                val wallpaper = preferences.getString(PREF_WALLPAPER, "")
+                if(wallpaper != "") {
+                    val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
+                    if(resId != 0)
+                        binding.alarmLayout.background = ContextCompat.getDrawable(requireContext(), resId)
+                }
                 val interval: Int = preferences.getInt(PREF_INTERVAL, 5)
                 val settings = Settings(id = 0, interval = interval)
                 adapter = AlarmsAdapter(settings, object : AlarmActionListener {
