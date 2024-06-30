@@ -126,15 +126,19 @@ class AlarmReceiver : BroadcastReceiver() {
 
     private fun selectMelody(settings: Settings?, context: Context) {
         mediaPlayer = when(settings?.melody ?: -1) {
-            context.getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.signal)
-            context.getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.signal)
-            context.getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.signal)
-            context.getString(R.string.melody4) -> MediaPlayer.create(context, R.raw.signal)
-            context.getString(R.string.melody5) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.default_signal1)
+            context.getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.default_signal2)
+            context.getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.default_signal3)
+            context.getString(R.string.melody4) -> MediaPlayer.create(context, R.raw.default_signal4)
+            context.getString(R.string.melody5) -> MediaPlayer.create(context, R.raw.default_signal5)
             context.getString(R.string.melody6) -> MediaPlayer.create(context, R.raw.signal)
-            context.getString(R.string.melody7) -> MediaPlayer.create(context, R.raw.signal)
-            context.getString(R.string.melody8) -> MediaPlayer.create(context, R.raw.signal)
-            else -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody7) -> MediaPlayer.create(context, R.raw.banjo_signal)
+            context.getString(R.string.melody8) -> MediaPlayer.create(context, R.raw.morning_signal)
+            context.getString(R.string.melody9) -> MediaPlayer.create(context, R.raw.simple_signal)
+            context.getString(R.string.melody10) -> MediaPlayer.create(context, R.raw.fitness_signal)
+            context.getString(R.string.melody11) -> MediaPlayer.create(context, R.raw.medieval_signal)
+            context.getString(R.string.melody12) -> MediaPlayer.create(context, R.raw.introduction_signal)
+            else -> MediaPlayer.create(context, R.raw.default_signal1)
         }
     }
 

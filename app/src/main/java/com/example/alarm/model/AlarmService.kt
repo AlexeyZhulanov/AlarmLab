@@ -1,7 +1,9 @@
 package com.example.alarm.model
 
 import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.example.alarm.room.AlarmDao
@@ -60,16 +62,38 @@ class AlarmService(
         return@withContext alarms
     }
 
-    override suspend fun addAlarm(alarm: Alarm) = withContext(Dispatchers.IO) {
-        alarmDao.addAlarm(AlarmDbEntity.fromUserInput(alarm))
-        alarms = getAlarms()
-        notifyChanges()
+    override suspend fun addAlarm(alarm: Alarm) : Boolean = withContext(Dispatchers.IO) {
+        val existingAlarmsCount = alarmDao.countAlarmsWithTime(alarm.timeHours, alarm.timeMinutes)
+        if(existingAlarmsCount == 0) {
+            try {
+                alarmDao.addAlarm(AlarmDbEntity.fromUserInput(alarm))
+            } catch (e: SQLiteConstraintException) {
+                Log.e("AlarmFragment", "Attempt to insert duplicate alarm", e)
+            }
+            alarms = getAlarms()
+            notifyChanges()
+            return@withContext true
+        }
+        else {
+            return@withContext false
+        }
     }
 
-    override suspend fun updateAlarm(alarm: Alarm) = withContext(Dispatchers.IO) {
-        alarmDao.updateAlarm(AlarmDbEntity.fromUserInput(alarm))
-        alarms = getAlarms()
-        notifyChanges()
+    override suspend fun updateAlarm(alarm: Alarm) : Boolean = withContext(Dispatchers.IO) {
+        val existingAlarmsCount = alarmDao.countAlarmsWithTime(alarm.timeHours, alarm.timeMinutes)
+        if(existingAlarmsCount == 0) {
+            try {
+                alarmDao.updateAlarm(AlarmDbEntity.fromUserInput(alarm))
+            } catch (e: SQLiteConstraintException) {
+                Log.e("AlarmFragment", "Attempt to insert duplicate alarm", e)
+            }
+            alarms = getAlarms()
+            notifyChanges()
+            return@withContext true
+        }
+        else {
+            return@withContext false
+        }
     }
 
     override suspend fun updateEnabled(id: Long, enabled: Int) = withContext(Dispatchers.IO) {

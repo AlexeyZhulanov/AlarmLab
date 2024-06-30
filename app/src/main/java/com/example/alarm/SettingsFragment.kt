@@ -83,24 +83,20 @@ class SettingsFragment : Fragment() {
             uiScope.launch {
                 val settings = async(Dispatchers.IO) { alarmsService.getSettings() }
                 when (settings.await().melody) {
-                    getString(R.string.melody1) -> playMelody(R.raw.signal)
-
-                    getString(R.string.melody2) -> playMelody(R.raw.signal)
-
-                    getString(R.string.melody3) -> playMelody(R.raw.signal)
-
-                    getString(R.string.melody4) -> playMelody(R.raw.signal)
-
-                    getString(R.string.melody5) -> playMelody(R.raw.signal)
-
+                    getString(R.string.melody1) -> playMelody(R.raw.default_signal1)
+                    getString(R.string.melody2) -> playMelody(R.raw.default_signal2)
+                    getString(R.string.melody3) -> playMelody(R.raw.default_signal3)
+                    getString(R.string.melody4) -> playMelody(R.raw.default_signal4)
+                    getString(R.string.melody5) -> playMelody(R.raw.default_signal5)
                     getString(R.string.melody6) -> playMelody(R.raw.signal)
-
-                    getString(R.string.melody7) -> playMelody(R.raw.signal)
-
-                    getString(R.string.melody8) -> playMelody(R.raw.signal)
-
+                    getString(R.string.melody7) -> playMelody(R.raw.banjo_signal)
+                    getString(R.string.melody8) -> playMelody(R.raw.morning_signal)
+                    getString(R.string.melody9) -> playMelody(R.raw.simple_signal)
+                    getString(R.string.melody10) -> playMelody(R.raw.fitness_signal)
+                    getString(R.string.melody11) -> playMelody(R.raw.medieval_signal)
+                    getString(R.string.melody12) -> playMelody(R.raw.introduction_signal)
                     else -> {
-                        Toast.makeText(requireContext(), "Melody not found", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Melody not selected", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -182,6 +178,10 @@ class SettingsFragment : Fragment() {
                 R.id.melody6 -> getString(R.string.melody6)
                 R.id.melody7 -> getString(R.string.melody7)
                 R.id.melody8 -> getString(R.string.melody8)
+                R.id.melody9 -> getString(R.string.melody9)
+                R.id.melody10 -> getString(R.string.melody10)
+                R.id.melody11 -> getString(R.string.melody11)
+                R.id.melody12 -> getString(R.string.melody12)
                 else -> null
             }
 
@@ -306,18 +306,31 @@ class SettingsFragment : Fragment() {
     }
 
     private fun playMelody(signalId: Int) {
+        if (::mediaPlayer.isInitialized) {
+            stopAndReleaseMediaPlayer()
+        }
+
         mediaPlayer = MediaPlayer.create(context, signalId)
-                mediaPlayer.start()
-                mediaPlayer.setOnCompletionListener {
-                    mediaPlayer.release()
-                    binding.floatingActionButtonVolumeOff.visibility = View.GONE
-                }
-                binding.floatingActionButtonVolumeOff.visibility = View.VISIBLE
-                binding.floatingActionButtonVolumeOff.setOnClickListener {
-                    mediaPlayer.stop()
-                    mediaPlayer.release()
-                    binding.floatingActionButtonVolumeOff.visibility = View.GONE
-                }
+        mediaPlayer.start()
+        mediaPlayer.setOnCompletionListener {
+            stopAndReleaseMediaPlayer()
+            binding.floatingActionButtonVolumeOff.visibility = View.GONE
+        }
+        binding.floatingActionButtonVolumeOff.visibility = View.VISIBLE
+        binding.floatingActionButtonVolumeOff.setOnClickListener {
+            stopAndReleaseMediaPlayer()
+            binding.floatingActionButtonVolumeOff.visibility = View.GONE
+        }
+    }
+
+    private fun stopAndReleaseMediaPlayer() {
+        if (::mediaPlayer.isInitialized) {
+            if (mediaPlayer.isPlaying) {
+                mediaPlayer.stop()
+            }
+            mediaPlayer.release()
+            mediaPlayer = MediaPlayer()
+        }
     }
 
     override fun onDestroyView() {

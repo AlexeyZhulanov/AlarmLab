@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.example.alarm.databinding.FragmentBottomsheetBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
@@ -70,11 +71,15 @@ class BottomSheetFragment(
             enabled = 1
         )
         uiScope.launch {
-            alarmsService.addAlarm(alarm)
-            val settings = async { alarmsService.getSettings() }
-            MyAlarmManager(context, alarm, settings.await()).startProcess()
-            Log.d("testSettingsAddAlarm", settings.await().toString())
-            bottomSheetListener.onAddAlarm(alarm)
+            if(alarmsService.addAlarm(alarm)) {
+                val settings = async { alarmsService.getSettings() }
+                MyAlarmManager(context, alarm, settings.await()).startProcess()
+                Log.d("testSettingsAddAlarm", settings.await().toString())
+                bottomSheetListener.onAddAlarm(alarm)
+            }
+            else {
+                Toast.makeText(context, getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show()
+            }
             dismiss()
         }
     }
@@ -87,12 +92,16 @@ class BottomSheetFragment(
             enabled = oldAlarm.enabled
         )
         uiScope.launch {
-            alarmsService.updateAlarm(alarmNew)
-            if (oldAlarm.enabled == 1) {
-                val settings = async { alarmsService.getSettings() }
-                MyAlarmManager(context, alarmNew, settings.await()).restartProcess()
+            if(alarmsService.updateAlarm(alarmNew)) {
+                if (oldAlarm.enabled == 1) {
+                    val settings = async { alarmsService.getSettings() }
+                    MyAlarmManager(context, alarmNew, settings.await()).restartProcess()
+                }
+                bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew)
             }
-            bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew)
+            else {
+                Toast.makeText(context, getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show()
+            }
             dismiss()
         }
     }

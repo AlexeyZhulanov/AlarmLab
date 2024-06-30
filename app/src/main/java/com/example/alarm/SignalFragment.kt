@@ -5,7 +5,11 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.icu.util.Calendar
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -38,6 +42,7 @@ class SignalFragment(
 
     private val alarmPlug = Alarm(id = id, name = name)
     private lateinit var mediaPlayer: MediaPlayer
+    private lateinit var vibrator: Vibrator
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
@@ -49,6 +54,7 @@ class SignalFragment(
 
         WorkManager.getInstance(requireContext()).enqueue(updateWorkRequest)
         selectMelody(settings!!)
+        if(settings.vibration == 1) startVibrator()
         val tmp = Calendar.getInstance().time.toString()
         val str = tmp.split(" ")
         val date = "${str[0]} ${str[1]} ${str[2]}"
@@ -100,22 +106,40 @@ class SignalFragment(
 
     private fun selectMelody(settings: Settings) {
         mediaPlayer = when(settings.melody) {
-            getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.signal)
-            getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.signal)
-            getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.signal)
-            getString(R.string.melody4) -> MediaPlayer.create(context, R.raw.signal)
-            getString(R.string.melody5) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.default_signal1)
+            getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.default_signal2)
+            getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.default_signal3)
+            getString(R.string.melody4) -> MediaPlayer.create(context, R.raw.default_signal4)
+            getString(R.string.melody5) -> MediaPlayer.create(context, R.raw.default_signal5)
             getString(R.string.melody6) -> MediaPlayer.create(context, R.raw.signal)
-            getString(R.string.melody7) -> MediaPlayer.create(context, R.raw.signal)
-            getString(R.string.melody8) -> MediaPlayer.create(context, R.raw.signal)
-            else -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody7) -> MediaPlayer.create(context, R.raw.banjo_signal)
+            getString(R.string.melody8) -> MediaPlayer.create(context, R.raw.morning_signal)
+            getString(R.string.melody9) -> MediaPlayer.create(context, R.raw.simple_signal)
+            getString(R.string.melody10) -> MediaPlayer.create(context, R.raw.fitness_signal)
+            getString(R.string.melody11) -> MediaPlayer.create(context, R.raw.medieval_signal)
+            getString(R.string.melody12) -> MediaPlayer.create(context, R.raw.introduction_signal)
+            else -> MediaPlayer.create(context, R.raw.default_signal1)
         }
         mediaPlayer.isLooping = true
         mediaPlayer.start()
     }
+
+    private fun startVibrator() {
+        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = requireContext().getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+        val pattern = longArrayOf(0, 100, 300, 200, 250, 300, 200, 400, 150, 300, 150, 200)
+        vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0))
+
+    }
     override fun onDestroyView() {
         super.onDestroyView()
         mediaPlayer.stop()
+        if(settings!!.vibration == 1) vibrator.cancel()
     }
 }
 const val LOCAL_BROADCAST_KEY2 = "alarm_update"

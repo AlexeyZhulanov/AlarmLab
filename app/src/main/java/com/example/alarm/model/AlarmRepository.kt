@@ -7,9 +7,9 @@ interface AlarmRepository {
 
     suspend fun getAlarms(): MutableList<Alarm>
 
-    suspend fun addAlarm(alarm: Alarm)
+    suspend fun addAlarm(alarm: Alarm) : Boolean
 
-    suspend fun updateAlarm(alarm: Alarm)
+    suspend fun updateAlarm(alarm: Alarm) : Boolean
 
     suspend fun updateEnabled(id: Long, enabled: Int)
 

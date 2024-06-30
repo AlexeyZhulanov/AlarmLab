@@ -12,6 +12,9 @@ interface AlarmDao {
     @Query("SELECT * FROM alarms ORDER BY time_hours ASC, time_minutes ASC")
     suspend fun selectAlarms(): List<AlarmsGetTuple?>
 
+    @Query("SELECT COUNT(*) FROM alarms WHERE time_hours = :hours AND time_minutes = :minutes")
+    suspend fun countAlarmsWithTime(hours: Int, minutes: Int): Int
+
     @Insert
     suspend fun addAlarm(alarmDbEntity: AlarmDbEntity)
 

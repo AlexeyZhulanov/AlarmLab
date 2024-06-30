@@ -1,13 +1,17 @@
 <resources>
     <string name="app_name">Будильник</string>
-    <string name="melody1">Item 1</string>
-    <string name="melody2">Item 2</string>
-    <string name="melody3">Item 3</string>
-    <string name="melody4">Item 4</string>
-    <string name="melody5">Item 5</string>
-    <string name="melody6">Item 6</string>
-    <string name="melody7">Item 7</string>
-    <string name="melody8">Item 8</string>
+    <string name="melody1">Melody 1</string>
+    <string name="melody2">Melody 2</string>
+    <string name="melody3">Melody 3</string>
+    <string name="melody4">Melody 4</string>
+    <string name="melody5">Melody 5</string>
+    <string name="melody6">Ship alarm</string>
+    <string name="melody7">Banjo</string>
+    <string name="melody8">Morning</string>
+    <string name="melody9">Simple</string>
+    <string name="melody10">Fitness</string>
+    <string name="melody11">Medieval</string>
+    <string name="melody12">Introduction</string>
     <string name="main_color">Осн. цвет</string>
     <string name="second_color">Доп. цвет</string>
     <string name="all_alarms_off">Все сигналы\nвыключены</string>
@@ -40,4 +44,5 @@
     <string name="repeat_caps">ПОВТОР</string>
     <string name="off_all_alarms">Выключить все будильники</string>
     <string name="volume_off">volume_off</string>
+    <string name="error_is_exist">Ошибка: Такой элемент уже существует</string>
 </resources>
