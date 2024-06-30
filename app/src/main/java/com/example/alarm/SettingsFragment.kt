@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Context.LAYOUT_INFLATER_SERVICE
 import android.content.SharedPreferences
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
@@ -29,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
 
@@ -39,6 +41,7 @@ class SettingsFragment : Fragment() {
         get() = Repositories.alarmRepository as AlarmService
     private var globalId: Long = 0
     private lateinit var preferences: SharedPreferences
+    private lateinit var mediaPlayer: MediaPlayer
 
     @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -80,30 +83,22 @@ class SettingsFragment : Fragment() {
             uiScope.launch {
                 val settings = async(Dispatchers.IO) { alarmsService.getSettings() }
                 when (settings.await().melody) {
-                    getString(R.string.melody1) -> {
-                        //todo
-                    }
-                    getString(R.string.melody2) -> {
-                        //todo
-                    }
-                    getString(R.string.melody3) -> {
-                        //todo
-                    }
-                    getString(R.string.melody4) -> {
-                        //todo
-                    }
-                    getString(R.string.melody5) -> {
-                        //todo
-                    }
-                    getString(R.string.melody6) -> {
-                        //todo
-                    }
-                    getString(R.string.melody7) -> {
-                        //todo
-                    }
-                    getString(R.string.melody8) -> {
-                        //todo
-                    }
+                    getString(R.string.melody1) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody2) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody3) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody4) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody5) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody6) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody7) -> playMelody(R.raw.signal)
+
+                    getString(R.string.melody8) -> playMelody(R.raw.signal)
+
                     else -> {
                         Toast.makeText(requireContext(), "Melody not found", Toast.LENGTH_SHORT).show()
                     }
@@ -310,7 +305,20 @@ class SettingsFragment : Fragment() {
         }
     }
 
-
+    private fun playMelody(signalId: Int) {
+        mediaPlayer = MediaPlayer.create(context, signalId)
+                mediaPlayer.start()
+                mediaPlayer.setOnCompletionListener {
+                    mediaPlayer.release()
+                    binding.floatingActionButtonVolumeOff.visibility = View.GONE
+                }
+                binding.floatingActionButtonVolumeOff.visibility = View.VISIBLE
+                binding.floatingActionButtonVolumeOff.setOnClickListener {
+                    mediaPlayer.stop()
+                    mediaPlayer.release()
+                    binding.floatingActionButtonVolumeOff.visibility = View.GONE
+                }
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

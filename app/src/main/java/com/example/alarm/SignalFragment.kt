@@ -26,6 +26,7 @@ import com.ncorti.slidetoact.SlideToActView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -47,6 +48,7 @@ class SignalFragment(
             .build()
 
         WorkManager.getInstance(requireContext()).enqueue(updateWorkRequest)
+        selectMelody(settings!!)
         val tmp = Calendar.getInstance().time.toString()
         val str = tmp.split(" ")
         val date = "${str[0]} ${str[1]} ${str[2]}"
@@ -55,11 +57,8 @@ class SignalFragment(
         binding.currentTimeTextView.text = time
         binding.currentDateTextView.text = date
         binding.nameTextView.text = name
-        mediaPlayer = MediaPlayer.create(context, R.raw.signal)
-        mediaPlayer.isLooping = true
-        mediaPlayer.start()
         val fragmentContext = requireContext()
-        if(settings!!.repetitions <= 0) {
+        if(settings.repetitions <= 0) {
             binding.repeatButton.visibility = View.GONE
         }
         else {
@@ -99,6 +98,21 @@ class SignalFragment(
         return if (isAdded) requireContext() else null
     }
 
+    private fun selectMelody(settings: Settings) {
+        mediaPlayer = when(settings.melody) {
+            getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody4) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody5) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody6) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody7) -> MediaPlayer.create(context, R.raw.signal)
+            getString(R.string.melody8) -> MediaPlayer.create(context, R.raw.signal)
+            else -> MediaPlayer.create(context, R.raw.signal)
+        }
+        mediaPlayer.isLooping = true
+        mediaPlayer.start()
+    }
     override fun onDestroyView() {
         super.onDestroyView()
         mediaPlayer.stop()

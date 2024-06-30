@@ -61,12 +61,12 @@ class AlarmReceiver : BroadcastReceiver() {
             // Release wakeLock after starting the activity
             wakeLock.release()
         } else {
-            showBasicTurnOffNotification(context, id)
+            showBasicTurnOffNotification(context, id, settings)
         }
     }
 
     @SuppressLint("LaunchActivityFromNotification")
-    private fun showBasicTurnOffNotification(context: Context, id: Long) {
+    private fun showBasicTurnOffNotification(context: Context, id: Long, settings: Settings?) {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "basic_channel_id"
@@ -77,7 +77,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 enableLights(true)
                 lightColor = android.graphics.Color.RED
                 enableVibration(true)
-                description = "Your alarm notifications"
+                description = "Alarm notification"
             }
         notificationManager.createNotificationChannel(channel)
 
@@ -88,7 +88,7 @@ class AlarmReceiver : BroadcastReceiver() {
         WorkManager.getInstance(context).enqueue(updateWorkRequest)
 
 
-        mediaPlayer = MediaPlayer.create(context, R.raw.signal)
+        selectMelody(settings, context)
         mediaPlayer.isLooping = true
 
         val filter = IntentFilter(LOCAL_BROADCAST_KEY2)
@@ -106,8 +106,8 @@ class AlarmReceiver : BroadcastReceiver() {
         )
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("App is Running")
-            .setContentText("Tap to turn off")
+            .setContentTitle("Будильник")
+            .setContentText("Нажмите, чтобы отключить будильник")
             .addAction(R.drawable.ic_clear, "Turn Off", turnOffPendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -121,8 +121,21 @@ class AlarmReceiver : BroadcastReceiver() {
         mediaPlayer.setOnCompletionListener {
             mediaPlayer.release() // Clear resources mediaPlayer
         }
-
         notificationManager.notify(2, notificationBuilder.build())
+    }
+
+    private fun selectMelody(settings: Settings?, context: Context) {
+        mediaPlayer = when(settings?.melody ?: -1) {
+            context.getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody4) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody5) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody6) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody7) -> MediaPlayer.create(context, R.raw.signal)
+            context.getString(R.string.melody8) -> MediaPlayer.create(context, R.raw.signal)
+            else -> MediaPlayer.create(context, R.raw.signal)
+        }
     }
 
     private val turnOffReceiver = object : BroadcastReceiver() {
