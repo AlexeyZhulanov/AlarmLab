@@ -1,10 +1,7 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.icu.util.Calendar
 import android.icu.util.ULocale
@@ -17,8 +14,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
@@ -43,19 +41,19 @@ class AlarmFragment : Fragment() {
     private lateinit var adapter: AlarmsAdapter
     private lateinit var binding: FragmentAlarmBinding
     private lateinit var preferences: SharedPreferences
-
     private val job = Job()
     private var uiScope = CoroutineScope(Dispatchers.Main + job)
     private var updateJob: Job? = null
-    private val alarmsService: AlarmService
-        get() = Repositories.alarmRepository as AlarmService
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
-
+    private lateinit var alarmViewModel: AlarmViewModel
     @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
-            binding = FragmentAlarmBinding.inflate(inflater, container, false)
+        binding = FragmentAlarmBinding.inflate(inflater, container, false)
+        val alarmService: AlarmService = Repositories.alarmRepository as AlarmService
+        val viewModelFactory = ViewModelFactory(alarmService)
+        alarmViewModel = ViewModelProvider(this, viewModelFactory)[AlarmViewModel::class.java]
                 preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
                 val wallpaper = preferences.getString(PREF_WALLPAPER, "")
                 if(wallpaper != "") {
@@ -69,25 +67,22 @@ class AlarmFragment : Fragment() {
                     override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                         uiScope.launch {
                             var bool = 0
-                            if (alarm.enabled == 0) { //turn on
+                            if (alarm.enabled == 0) {
                                 bool = 1
-                                val s = async(Dispatchers.IO) { alarmsService.getSettings() }
-                                MyAlarmManager(context, alarm, s.await()).startProcess()
-                                Log.d("testSettingsEnabled", s.await().toString())
                                 changeAlarmTime(alarm, false)
                                 binding.barTextView.text = updateBar()
                             } else {
-                                MyAlarmManager(context, alarm, Settings(0)).endProcess()
                                 changeAlarmTime(alarm, true)
                                 binding.barTextView.text = updateBar()
                             }
-                            alarmsService.updateEnabled(alarm.id, bool)
-                            adapter.notifyItemChanged(index)
+                            val idx = async(Dispatchers.IO) {
+                                alarmViewModel.updateEnabledAlarm(alarm, bool, requireContext(), index)
+                            }
+                            adapter.notifyItemChanged(idx.await()) //костыль, но по-другому нет идей как сделать
                         }
                     }
-
                     override fun onAlarmChange(alarm: Alarm) {
-                        BottomSheetFragment(false, alarm, object : BottomSheetListener {
+                        BottomSheetFragment(false, alarm, alarmViewModel, object : BottomSheetListener {
                             override fun onAddAlarm(alarm: Alarm) {
                                 return
                             }
@@ -115,10 +110,7 @@ class AlarmFragment : Fragment() {
                                         adapter.notifyDataSetChanged()
                                         binding.floatingActionButtonDelete.visibility = View.GONE
                                         binding.floatingActionButtonAdd.visibility = View.VISIBLE
-                                        uiScope.launch {
-                                            alarmsService.getAlarms()
-                                            alarmsService.notifyChanges()
-                                        }
+                                        alarmViewModel.getAndNotify()
                                     } else {
                                         //Removing this callback
                                         remove()
@@ -129,13 +121,12 @@ class AlarmFragment : Fragment() {
                         binding.floatingActionButtonDelete.setOnClickListener {
                             val alarmsToDelete = adapter.getDeleteList()
                             if (alarmsToDelete.isNotEmpty()) {
-                                uiScope.launch {
-                                    alarmsService.deleteAlarms(alarmsToDelete, context)
+                                    alarmViewModel.deleteAlarms(alarmsToDelete, context)
                                     for (a in alarmsToDelete) {
                                         if (a.enabled == 1) changeAlarmTime(a, true)
                                     }
                                     binding.barTextView.text = updateBar()
-                                }
+
                                 binding.floatingActionButtonDelete.visibility = View.GONE
                                 binding.floatingActionButtonAdd.visibility = View.VISIBLE
                                 adapter.clearPositions()
@@ -148,13 +139,15 @@ class AlarmFragment : Fragment() {
                 val layoutManager = LinearLayoutManager(requireContext())
                 binding.recyclerview.layoutManager = layoutManager
                 binding.recyclerview.adapter = adapter
-                alarmsService.addListener(alarmsListener)
+                alarmViewModel.alarms.observe(viewLifecycleOwner) {
+                    adapter.alarms = it
+                    Log.d("testPrinimanie", "$it")
+                }
                 (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
 
                 binding.floatingActionButtonAdd.setOnClickListener {
-                    BottomSheetFragment(true, Alarm(0), object : BottomSheetListener {
+                    BottomSheetFragment(true, Alarm(0), alarmViewModel, object : BottomSheetListener {
                         override fun onAddAlarm(alarm: Alarm) {
-                            uiScope.launch {
                                 var id: Long = 0
                                 for (a in adapter.alarms) {
                                     if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) {
@@ -171,7 +164,6 @@ class AlarmFragment : Fragment() {
                                 )
                                 changeAlarmTime(alr, false)
                                 binding.barTextView.text = updateBar()
-                            }
                         }
 
                         override fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm) {
@@ -179,7 +171,7 @@ class AlarmFragment : Fragment() {
                         }
                     }).show(childFragmentManager, "AddTag")
                 }
-        alarmsService.initCompleted.observe(viewLifecycleOwner) { initCompleted ->
+        alarmService.initCompleted.observe(viewLifecycleOwner) { initCompleted ->
             if (initCompleted) {
                 updateJob = lifecycleScope.launch {
                     millisToAlarm = fillAlarmsTime()
@@ -195,11 +187,7 @@ class AlarmFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        alarmsService.removeListener(alarmsListener)
         updateJob?.cancel()
-    }
-    private val alarmsListener: AlarmsListener = {
-        adapter.alarms = it
     }
 
     private suspend fun fillAlarmsTime() : MutableMap<Long, Long> = withContext(Dispatchers.Default){
@@ -258,9 +246,6 @@ class AlarmFragment : Fragment() {
             }
         }
         return txt
-    }
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onPause() {

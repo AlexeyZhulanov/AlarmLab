@@ -25,6 +25,7 @@ interface BottomSheetListener {
 class BottomSheetFragment(
     private val isAdd: Boolean,
     private val oldAlarm: Alarm,
+    private val alarmViewModel: AlarmViewModel,
     private val bottomSheetListener: BottomSheetListener
 ) : BottomSheetDialogFragment() {
 
@@ -32,8 +33,6 @@ class BottomSheetFragment(
 
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
-    private val alarmsService: AlarmService
-        get() = Repositories.alarmRepository as AlarmService
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -57,7 +56,7 @@ class BottomSheetFragment(
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentBottomsheetBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -71,10 +70,7 @@ class BottomSheetFragment(
             enabled = 1
         )
         uiScope.launch {
-            if(alarmsService.addAlarm(alarm)) {
-                val settings = async { alarmsService.getSettings() }
-                MyAlarmManager(context, alarm, settings.await()).startProcess()
-                Log.d("testSettingsAddAlarm", settings.await().toString())
+            if(alarmViewModel.addAlarm(alarm, requireContext())) {
                 bottomSheetListener.onAddAlarm(alarm)
             }
             else {
@@ -92,11 +88,7 @@ class BottomSheetFragment(
             enabled = oldAlarm.enabled
         )
         uiScope.launch {
-            if(alarmsService.updateAlarm(alarmNew)) {
-                if (oldAlarm.enabled == 1) {
-                    val settings = async { alarmsService.getSettings() }
-                    MyAlarmManager(context, alarmNew, settings.await()).restartProcess()
-                }
+            if(alarmViewModel.updateAlarm(alarmNew, requireContext())) {
                 bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew)
             }
             else {
