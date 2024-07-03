@@ -45,12 +45,9 @@ class AlarmFragment : Fragment() {
     private lateinit var alarmViewModel: AlarmViewModel
     @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        Repositories.init(requireActivity().applicationContext)
         binding = FragmentAlarmBinding.inflate(inflater, container, false)
-        val alarmService: AlarmService = Repositories.alarmRepository as AlarmService
-        val viewModelFactory = ViewModelFactory(alarmService)
-        alarmViewModel = ViewModelProvider(this, viewModelFactory)[AlarmViewModel::class.java]
-                val (wallpaper, interval) = alarmViewModel.getPreferences(requireContext())
+        alarmViewModel = ViewModelProvider(requireActivity())[AlarmViewModel::class.java]
+                val (wallpaper, interval) = alarmViewModel.getPreferencesWallpaperAndInterval(requireContext())
                 if(wallpaper != "") {
                     val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
                     if(resId != 0)
@@ -76,7 +73,7 @@ class AlarmFragment : Fragment() {
                         }
                     }
                     override fun onAlarmChange(alarm: Alarm) {
-                        BottomSheetFragment(false, alarm, alarmViewModel, object : BottomSheetListener {
+                        BottomSheetFragment(false, alarm, object : BottomSheetListener {
                             override fun onAddAlarm(alarm: Alarm) {
                                 return
                             }
@@ -137,7 +134,7 @@ class AlarmFragment : Fragment() {
                 }
                 (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
                 binding.floatingActionButtonAdd.setOnClickListener {
-                    BottomSheetFragment(true, Alarm(0), alarmViewModel, object : BottomSheetListener {
+                    BottomSheetFragment(true, Alarm(0), object : BottomSheetListener {
                         override fun onAddAlarm(alarm: Alarm) {
                                 var id: Long = 0
                                 for (a in adapter.alarms) {
@@ -162,8 +159,9 @@ class AlarmFragment : Fragment() {
                         }
                     }).show(childFragmentManager, "AddTag")
                 }
-        alarmService.initCompleted.observe(viewLifecycleOwner) { initCompleted ->
-            if (initCompleted) {
+        alarmViewModel.initCompleted.observe(viewLifecycleOwner) {
+            Log.d("test","Works!")
+            if (it) {
                 updateJob = lifecycleScope.launch {
                     millisToAlarm = fillAlarmsTime()
                     while (isActive) {

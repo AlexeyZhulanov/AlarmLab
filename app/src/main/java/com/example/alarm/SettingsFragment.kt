@@ -20,6 +20,8 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.FragmentSettingsBinding
@@ -34,21 +36,20 @@ import kotlinx.coroutines.withContext
 
 class SettingsFragment : Fragment() {
 
-    private val job = Job()
-    private val uiScope = CoroutineScope(Dispatchers.Main + job)
     private lateinit var binding: FragmentSettingsBinding
-    private val alarmsService: AlarmService
-        get() = Repositories.alarmRepository as AlarmService
     private var globalId: Long = 0
-    private lateinit var preferences: SharedPreferences
     private lateinit var mediaPlayer: MediaPlayer
+    private lateinit var alarmViewModel: AlarmViewModel
 
     @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentSettingsBinding.inflate(inflater, container, false)
-        preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-        preferences.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
-        val wallpaper = preferences.getString(PREF_WALLPAPER, "")
+        alarmViewModel = ViewModelProvider(requireActivity())[AlarmViewModel::class.java]
+        alarmViewModel.registerPreferences(requireContext())
+        alarmViewModel.wallpaper.observe(viewLifecycleOwner) {
+            updateWallpapers(it)
+        }
+        val (wallpaper, _) = alarmViewModel.getPreferencesWallpaperAndInterval(requireContext())
         if(wallpaper != "") {
             binding.wallpaperName.text = wallpaper
             val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
@@ -57,10 +58,10 @@ class SettingsFragment : Fragment() {
         else {
             binding.wallpaperName.text = "Classic"
         }
-        val themeNumber = preferences.getInt(PREF_THEME, 0)
+        val themeNumber = alarmViewModel.getPreferencesTheme(requireContext())
         if(themeNumber != 0) binding.colorThemeName.text = "Theme ${themeNumber+1}" else binding.colorThemeName.text = "Classic"
-        uiScope.launch {
-            val settings = alarmsService.getSettings()
+        lifecycleScope.launch {
+            val settings = alarmViewModel.getSettings()
             binding.melodyName.text = settings.melody
             binding.repeatRadioGroup.isEnabled = settings.repetitions == 1
             binding.switchVibration.isChecked = settings.vibration == 1
@@ -80,8 +81,8 @@ class SettingsFragment : Fragment() {
             showSignalsPopupMenu(it)
         }
         binding.playMelody.setOnClickListener {
-            uiScope.launch {
-                val settings = async(Dispatchers.IO) { alarmsService.getSettings() }
+            lifecycleScope.launch {
+                val settings = async(Dispatchers.IO) { alarmViewModel.getSettings() }
                 when (settings.await().melody) {
                     getString(R.string.melody1) -> playMelody(R.raw.default_signal1)
                     getString(R.string.melody2) -> playMelody(R.raw.default_signal2)
@@ -103,33 +104,33 @@ class SettingsFragment : Fragment() {
         }
         binding.switchVibration.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
         }
         binding.repeats3.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
         }
         binding.repeats5.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
         }
         binding.repeatsInfinite.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
         }
         binding.interval3.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
             updatePrefs(3)
         }
         binding.interval5.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
             updatePrefs(5)
         }
         binding.interval10.setOnClickListener {
             val s = readSettings(globalId)
-            uiScope.launch { alarmsService.updateSettings(s) }
+            lifecycleScope.launch { alarmViewModel.updateSettings(s) }
             updatePrefs(10)
         }
         binding.changeColorTheme.setOnClickListener {
@@ -158,12 +159,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun updatePrefs(interval: Int) {
-        uiScope.launch {
-            preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-            preferences.edit()
-                .putInt(PREF_INTERVAL, interval)
-                .apply()
-        }
+        alarmViewModel.editPreferencesInterval(requireContext(), interval)
     }
     private fun showSignalsPopupMenu(view: View) {
         val popupMenu = PopupMenu(requireContext(), view)
@@ -188,7 +184,7 @@ class SettingsFragment : Fragment() {
             newMelodyName?.let { name ->
                 binding.melodyName.text = name
                 val s = readSettings(globalId)
-                uiScope.launch { alarmsService.updateSettings(s) }
+                lifecycleScope.launch { alarmViewModel.updateSettings(s) }
                 true
             } ?: false
         }
@@ -238,10 +234,7 @@ class SettingsFragment : Fragment() {
                 "10." -> "wallpaper10"
                 else -> ""
             }
-            preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-            preferences.edit()
-                .putString(PREF_WALLPAPER, temp)
-                .apply()
+            alarmViewModel.editPreferencesWallpaper(requireContext(), temp)
             popupWindow.dismiss()
         }
 
@@ -276,10 +269,7 @@ class SettingsFragment : Fragment() {
             ColorThemeMenuItem(R.color.color8_main, R.color.color8_secondary, 8)
         )
         val adapter = ColorThemeMenuAdapter(menuItems) { menuItem ->
-            preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-            preferences.edit()
-                .putInt(PREF_THEME, menuItem.themeNumber)
-                .apply()
+            alarmViewModel.editPreferencesTheme(requireContext(), menuItem.themeNumber)
             requireActivity().recreate()
             popupWindow.dismiss()
         }
@@ -288,20 +278,18 @@ class SettingsFragment : Fragment() {
 
         popupWindow.showAsDropDown(view)
     }
+
     @SuppressLint("DiscouragedApi")
-    private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        if (key == PREF_WALLPAPER) {
-            val tmp = sharedPreferences.getString(PREF_WALLPAPER, "")
-            binding.wallpaperName.text = tmp
-            if(tmp != "") {
-                val resId = resources.getIdentifier(tmp, "drawable", requireContext().packageName)
-                if(resId != 0)
-                    binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), resId)
-            }
-            else {
-                binding.settingsLayout.background = null
-                binding.wallpaperName.text = "Classic"
-            }
+    private fun updateWallpapers(wallpaper: String) {
+        binding.wallpaperName.text = wallpaper
+        if(wallpaper != "") {
+            val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
+            if(resId != 0)
+                binding.settingsLayout.background = ContextCompat.getDrawable(requireContext(), resId)
+        }
+        else {
+            binding.settingsLayout.background = null
+            binding.wallpaperName.text = "Classic"
         }
     }
 
@@ -335,9 +323,6 @@ class SettingsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        val sharedPreferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-        sharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
+        alarmViewModel.unregisterPreferences(requireContext())
     }
 }
-const val PREF_WALLPAPER = "PREF_WALLPAPER"
-const val PREF_THEME = "PREF_THEME"
