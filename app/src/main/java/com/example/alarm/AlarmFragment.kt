@@ -3,6 +3,7 @@ package com.example.alarm
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Rect
 import android.icu.util.Calendar
 import android.icu.util.ULocale
 import android.os.Bundle
@@ -18,6 +19,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
@@ -33,16 +35,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-const val APP_PREFERENCES = "APP_PREFERENCES"
-const val PREF_INTERVAL = "PREF_INTERVAL"
-
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
     private lateinit var binding: FragmentAlarmBinding
-    private lateinit var preferences: SharedPreferences
-    private val job = Job()
-    private var uiScope = CoroutineScope(Dispatchers.Main + job)
     private var updateJob: Job? = null
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
@@ -54,18 +50,16 @@ class AlarmFragment : Fragment() {
         val alarmService: AlarmService = Repositories.alarmRepository as AlarmService
         val viewModelFactory = ViewModelFactory(alarmService)
         alarmViewModel = ViewModelProvider(this, viewModelFactory)[AlarmViewModel::class.java]
-                preferences = requireActivity().getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-                val wallpaper = preferences.getString(PREF_WALLPAPER, "")
+                val (wallpaper, interval) = alarmViewModel.getPreferences(requireContext())
                 if(wallpaper != "") {
                     val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
                     if(resId != 0)
                         binding.alarmLayout.background = ContextCompat.getDrawable(requireContext(), resId)
                 }
-                val interval: Int = preferences.getInt(PREF_INTERVAL, 5)
                 val settings = Settings(id = 0, interval = interval)
                 adapter = AlarmsAdapter(settings, object : AlarmActionListener {
                     override fun onAlarmEnabled(alarm: Alarm, index: Int) {
-                        uiScope.launch {
+                        lifecycleScope.launch {
                             var bool = 0
                             if (alarm.enabled == 0) {
                                 bool = 1
@@ -126,7 +120,6 @@ class AlarmFragment : Fragment() {
                                         if (a.enabled == 1) changeAlarmTime(a, true)
                                     }
                                     binding.barTextView.text = updateBar()
-
                                 binding.floatingActionButtonDelete.visibility = View.GONE
                                 binding.floatingActionButtonAdd.visibility = View.VISIBLE
                                 adapter.clearPositions()
@@ -135,16 +128,14 @@ class AlarmFragment : Fragment() {
                         }
                     }
                 })
-
                 val layoutManager = LinearLayoutManager(requireContext())
                 binding.recyclerview.layoutManager = layoutManager
                 binding.recyclerview.adapter = adapter
+                binding.recyclerview.addItemDecoration(VerticalSpaceItemDecoration(40))
                 alarmViewModel.alarms.observe(viewLifecycleOwner) {
                     adapter.alarms = it
-                    Log.d("testPrinimanie", "$it")
                 }
                 (activity as AppCompatActivity?)!!.setSupportActionBar(binding.toolbar) //adds a button
-
                 binding.floatingActionButtonAdd.setOnClickListener {
                     BottomSheetFragment(true, Alarm(0), alarmViewModel, object : BottomSheetListener {
                         override fun onAddAlarm(alarm: Alarm) {
@@ -248,8 +239,20 @@ class AlarmFragment : Fragment() {
         return txt
     }
 
+    suspend fun fillAndUpdateBar() = withContext(Dispatchers.Default) {
+        millisToAlarm = fillAlarmsTime()
+        binding.barTextView.text = updateBar()
+    }
+
     override fun onPause() {
         super.onPause()
         updateJob?.cancel()
+    }
+}
+
+class VerticalSpaceItemDecoration(private val verticalSpaceHeight: Int) : RecyclerView.ItemDecoration() {
+    override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+        super.getItemOffsets(outRect, view, parent, state)
+        outRect.bottom = verticalSpaceHeight
     }
 }

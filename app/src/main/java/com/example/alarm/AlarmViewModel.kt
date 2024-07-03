@@ -1,6 +1,7 @@
 package com.example.alarm
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -16,6 +17,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+const val APP_PREFERENCES = "APP_PREFERENCES"
+const val PREF_INTERVAL = "PREF_INTERVAL"
+
 class AlarmViewModel(
     private val alarmsService: AlarmService
 ) : ViewModel() {
@@ -23,9 +27,9 @@ class AlarmViewModel(
     private val _alarms = MutableLiveData<List<Alarm>>()
     val alarms: LiveData<List<Alarm>> = _alarms
 
+
     private val alarmsListener: AlarmsListener = {
         _alarms.value = it
-        Log.d("testAlarms:", it.toString())
     }
     init {
         alarmsService.addListener(alarmsListener)
@@ -85,5 +89,11 @@ class AlarmViewModel(
             alarmsService.getAlarms()
             alarmsService.notifyChanges()
         }
+    }
+    fun getPreferences(context: Context): Pair<String, Int>{
+        val preferences: SharedPreferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
+        val wallpaper = preferences.getString(PREF_WALLPAPER, "")
+        val interval: Int = preferences.getInt(PREF_INTERVAL, 5)
+        return Pair(wallpaper!!, interval)
     }
 }

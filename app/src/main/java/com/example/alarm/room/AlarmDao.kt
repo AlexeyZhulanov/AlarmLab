@@ -15,6 +15,9 @@ interface AlarmDao {
     @Query("SELECT COUNT(*) FROM alarms WHERE time_hours = :hours AND time_minutes = :minutes")
     suspend fun countAlarmsWithTime(hours: Int, minutes: Int): Int
 
+    @Query("SELECT COUNT(*) FROM alarms WHERE time_hours = :hours AND time_minutes = :minutes AND name = :name")
+    suspend fun countAlarmsWithTimeAndName(hours: Int, minutes: Int, name: String): Int
+
     @Insert
     suspend fun addAlarm(alarmDbEntity: AlarmDbEntity)
 

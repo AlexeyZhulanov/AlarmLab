@@ -80,7 +80,7 @@ class AlarmService(
     }
 
     override suspend fun updateAlarm(alarm: Alarm) : Boolean = withContext(Dispatchers.IO) {
-        val existingAlarmsCount = alarmDao.countAlarmsWithTime(alarm.timeHours, alarm.timeMinutes)
+        val existingAlarmsCount = alarmDao.countAlarmsWithTimeAndName(alarm.timeHours, alarm.timeMinutes, alarm.name)
         if(existingAlarmsCount == 0) {
             try {
                 alarmDao.updateAlarm(AlarmDbEntity.fromUserInput(alarm))

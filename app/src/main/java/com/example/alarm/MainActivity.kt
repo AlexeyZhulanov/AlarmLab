@@ -22,7 +22,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import com.example.alarm.databinding.ActivityMainBinding
 import com.example.alarm.model.AlarmService
-import com.example.alarm.model.AppVisibilityTracker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -77,7 +76,7 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()
-                .add(R.id.fragmentContainer, AlarmFragment())
+                .add(R.id.fragmentContainer, AlarmFragment(), "ALARM_FRAGMENT_TAG")
                 .commit()
         }
         supportFragmentManager.registerFragmentLifecycleCallbacks(fragmentListener, false)
@@ -117,20 +116,16 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.off_alarms -> {
-                uiScope.launch { alarmsService.offAlarms(applicationContext) }
+                uiScope.launch {
+                    alarmsService.offAlarms(applicationContext)
+                    (supportFragmentManager.findFragmentByTag("ALARM_FRAGMENT_TAG") as? AlarmFragment)?.fillAndUpdateBar()
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-    }
     private fun checkOverlayPermission(context: Context) {
         if (!Settings.canDrawOverlays(context)) {
             val builder = AlertDialog.Builder(context)

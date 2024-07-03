@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.lifecycle.lifecycleScope
 import com.example.alarm.databinding.FragmentBottomsheetBinding
 import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
@@ -30,9 +31,6 @@ class BottomSheetFragment(
 ) : BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentBottomsheetBinding
-
-    private val job = Job()
-    private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -69,7 +67,7 @@ class BottomSheetFragment(
             name = if(binding.signalName.text.toString() == "") "default" else binding.signalName.text.toString() ,
             enabled = 1
         )
-        uiScope.launch {
+        lifecycleScope.launch {
             if(alarmViewModel.addAlarm(alarm, requireContext())) {
                 bottomSheetListener.onAddAlarm(alarm)
             }
@@ -87,7 +85,7 @@ class BottomSheetFragment(
             name = if(binding.signalName.text.toString() == "") "default" else binding.signalName.text.toString(),
             enabled = oldAlarm.enabled
         )
-        uiScope.launch {
+        lifecycleScope.launch {
             if(alarmViewModel.updateAlarm(alarmNew, requireContext())) {
                 bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew)
             }
