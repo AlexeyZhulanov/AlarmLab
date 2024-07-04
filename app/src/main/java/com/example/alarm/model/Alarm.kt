@@ -1,6 +1,8 @@
 package com.example.alarm.model
 
-data class Alarm(
+import javax.inject.Inject
+
+data class Alarm @Inject constructor(
     val id: Long,
     var timeHours: Int = 7,
     var timeMinutes: Int = 0,

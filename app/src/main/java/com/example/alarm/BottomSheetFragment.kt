@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.alarm.databinding.FragmentBottomsheetBinding
@@ -13,6 +14,7 @@ import com.example.alarm.model.Alarm
 import com.example.alarm.model.AlarmService
 import com.example.alarm.model.MyAlarmManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,6 +26,7 @@ interface BottomSheetListener {
     fun onChangeAlarm(alarmOld: Alarm, alarmNew: Alarm)
 }
 
+@AndroidEntryPoint
 class BottomSheetFragment(
     private val isAdd: Boolean,
     private val oldAlarm: Alarm,
@@ -31,11 +34,10 @@ class BottomSheetFragment(
 ) : BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentBottomsheetBinding
-    private lateinit var alarmViewModel: AlarmViewModel
+    private val alarmViewModel: AlarmViewModel by viewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        alarmViewModel = ViewModelProvider(requireActivity())[AlarmViewModel::class.java]
         binding.timePicker.setIs24HourView(true)
         if(isAdd) {
             binding.timePicker.hour = 7

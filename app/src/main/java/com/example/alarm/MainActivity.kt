@@ -16,6 +16,7 @@ import android.provider.Settings
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.util.TypedValue
+import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -23,20 +24,21 @@ import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import com.example.alarm.databinding.ActivityMainBinding
 import com.example.alarm.model.AlarmService
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    lateinit var alarmViewModel: AlarmViewModel
-
+    @Inject
+    lateinit var alarmsService: AlarmService
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
-    private val alarmsService: AlarmService
-        get() = Repositories.alarmRepository as AlarmService
 
     private val currentFragment: Fragment
         get() = supportFragmentManager.findFragmentById(R.id.fragmentContainer)!!
@@ -69,10 +71,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater).also { setContentView(it.root) }
         setContentView(binding.root)
-        Repositories.init(applicationContext)
-        val alarmService: AlarmService = Repositories.alarmRepository as AlarmService
-        val viewModelFactory = ViewModelFactory(alarmService)
-        alarmViewModel = ViewModelProvider(this, viewModelFactory)[AlarmViewModel::class.java]
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST_CODE)

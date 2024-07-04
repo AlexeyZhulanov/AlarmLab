@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 interface AlarmActionListener {
     fun onAlarmEnabled(alarm: Alarm, index: Int)
@@ -24,7 +25,7 @@ interface AlarmActionListener {
 }
 
 class AlarmsAdapter(
-    private val settings: Settings,
+    private val interval: Int,
     private val actionListener: AlarmActionListener
 ) : RecyclerView.Adapter<AlarmsAdapter.AlarmsViewHolder>(), View.OnClickListener, View.OnLongClickListener {
 
@@ -130,8 +131,8 @@ class AlarmsAdapter(
                 var txt2: String = ""
                 txt2 += if (alarm.name != "default")
                     "<font color='#FF00FF'>${alarm.name}</font>"
-                else "раз в ${settings.interval} минут"
-                if (settings.interval == 3 && alarm.name == "default") txt2 += "ы"
+                else "раз в $interval минут"
+                if (interval == 3 && alarm.name == "default") txt2 += "ы"
                 intervalTextView.text = Html.fromHtml(txt2, 0)
                 switch1.isChecked = alarm.enabled == 1
                 if (!canLongClick) {

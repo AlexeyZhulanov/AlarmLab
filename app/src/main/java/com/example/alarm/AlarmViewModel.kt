@@ -13,17 +13,19 @@ import com.example.alarm.model.AlarmService
 import com.example.alarm.model.AlarmsListener
 import com.example.alarm.model.MyAlarmManager
 import com.example.alarm.model.Settings
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 const val APP_PREFERENCES = "APP_PREFERENCES"
 const val PREF_INTERVAL = "PREF_INTERVAL"
 const val PREF_WALLPAPER = "PREF_WALLPAPER"
 const val PREF_THEME = "PREF_THEME"
-
-class AlarmViewModel(
+@HiltViewModel
+class AlarmViewModel @Inject constructor(
     private val alarmsService: AlarmService
 ) : ViewModel() {
 

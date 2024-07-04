@@ -2,9 +2,10 @@ package com.example.alarm.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import javax.inject.Inject
 
 @Parcelize
-data class Settings(
+data class Settings @Inject constructor(
     val id: Long,
     var melody: String = "default",
     var vibration: Int = 1,

@@ -10,10 +10,12 @@ import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.alarm.databinding.ActivitySignalBinding
 import com.example.alarm.model.Settings
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class SignalActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignalBinding

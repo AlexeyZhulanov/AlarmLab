@@ -26,6 +26,7 @@ import com.example.alarm.model.AlarmService
 import com.example.alarm.model.AlarmsListener
 import com.example.alarm.model.MyAlarmManager
 import com.example.alarm.model.Settings
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,6 +36,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@AndroidEntryPoint
 class AlarmFragment : Fragment() {
 
     private lateinit var adapter: AlarmsAdapter
@@ -42,19 +44,17 @@ class AlarmFragment : Fragment() {
     private var updateJob: Job? = null
 
     private var millisToAlarm = mutableMapOf<Long, Long>()
-    private lateinit var alarmViewModel: AlarmViewModel
+    private val alarmViewModel: AlarmViewModel by viewModels()
     @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentAlarmBinding.inflate(inflater, container, false)
-        alarmViewModel = ViewModelProvider(requireActivity())[AlarmViewModel::class.java]
                 val (wallpaper, interval) = alarmViewModel.getPreferencesWallpaperAndInterval(requireContext())
                 if(wallpaper != "") {
                     val resId = resources.getIdentifier(wallpaper, "drawable", requireContext().packageName)
                     if(resId != 0)
                         binding.alarmLayout.background = ContextCompat.getDrawable(requireContext(), resId)
                 }
-                val settings = Settings(id = 0, interval = interval)
-                adapter = AlarmsAdapter(settings, object : AlarmActionListener {
+                adapter = AlarmsAdapter(interval, object : AlarmActionListener {
                     override fun onAlarmEnabled(alarm: Alarm, index: Int) {
                         lifecycleScope.launch {
                             var bool = 0

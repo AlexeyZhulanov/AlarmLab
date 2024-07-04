@@ -20,6 +20,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -27,6 +28,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.FragmentSettingsBinding
 import com.example.alarm.model.AlarmService
 import com.example.alarm.model.Settings
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,17 +36,17 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@AndroidEntryPoint
 class SettingsFragment : Fragment() {
 
     private lateinit var binding: FragmentSettingsBinding
     private var globalId: Long = 0
     private lateinit var mediaPlayer: MediaPlayer
-    private lateinit var alarmViewModel: AlarmViewModel
+    private val alarmViewModel: AlarmViewModel by viewModels()
 
     @SuppressLint("DiscouragedApi")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentSettingsBinding.inflate(inflater, container, false)
-        alarmViewModel = ViewModelProvider(requireActivity())[AlarmViewModel::class.java]
         alarmViewModel.registerPreferences(requireContext())
         alarmViewModel.wallpaper.observe(viewLifecycleOwner) {
             updateWallpapers(it)
