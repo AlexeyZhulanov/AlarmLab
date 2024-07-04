@@ -92,9 +92,7 @@ class MyAlarmManager(
     suspend fun repeatProcess() = withContext(Dispatchers.Default) {
         initialFunc(false)
         val calendar = Calendar.getInstance(ULocale.ROOT)
-        Log.d("testSettingsRepeat", settings.toString())
-        //val time = calendar.timeInMillis + settings.interval.toLong()*60000
-        val time = calendar.timeInMillis + 10000
+        val time = calendar.timeInMillis + settings.interval.toLong()*60000
         alarmManager.setAlarmClock(AlarmManager.AlarmClockInfo(time, alarmIntent), alarmIntent)
     }
 }

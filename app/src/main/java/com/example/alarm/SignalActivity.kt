@@ -5,18 +5,20 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.IntentCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.alarm.databinding.ActivitySignalBinding
-import com.example.alarm.model.AlarmService
 import com.example.alarm.model.Settings
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class SignalActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignalBinding
+    private var isHomePressed = false
+    private var homePressResetJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val preferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
@@ -58,19 +60,34 @@ class SignalActivity : AppCompatActivity() {
         if (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) is SignalFragment) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
                 (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) as SignalFragment).dropAndRepeatFragment()
-                return true
             }
         }
-        return super.onKeyUp(keyCode, event)
+        return true
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) is SignalFragment) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
                 (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) as SignalFragment).dropAndRepeatFragment()
-                return true
             }
         }
-        return super.onKeyDown(keyCode, event)
+        return true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        isHomePressed = true
+        homePressResetJob?.cancel()
+        homePressResetJob = lifecycleScope.launch {
+            delay(1000)
+            isHomePressed = false
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (isHomePressed) {
+            (supportFragmentManager.findFragmentById(R.id.fragmentContainer2) as SignalFragment).dropAndRepeatFragment()
+        }
     }
 }

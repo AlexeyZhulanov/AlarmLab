@@ -97,6 +97,7 @@ class AlarmReceiver : BroadcastReceiver() {
         }
         val turnOffIntent = Intent(LOCAL_BROADCAST_KEY2).apply {
             putExtra("alarmId", id)
+            putExtra("notificationId",2)
         }
         val turnOffPendingIntent = PendingIntent.getBroadcast(
             context,
@@ -148,8 +149,12 @@ class AlarmReceiver : BroadcastReceiver() {
             mediaPlayer.stop()
             uiScope.launch {
                 val alarmId = intent.getLongExtra("alarmId", 0)
+                val notificationId = intent.getIntExtra("notificationId", -1)
                 val alarmPlug = Alarm(alarmId)
                 MyAlarmManager(cont, alarmPlug, Settings(0)).endProcess()
+                val notificationManager =
+                    cont.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(notificationId)
             }
         }
     }

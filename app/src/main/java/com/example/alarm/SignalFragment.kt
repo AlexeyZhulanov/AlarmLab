@@ -1,10 +1,18 @@
 package com.example.alarm
 
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.icu.util.Calendar
+import android.icu.util.ULocale
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -14,6 +22,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -43,6 +52,8 @@ class SignalFragment(
     private val alarmPlug = Alarm(id = id, name = name)
     private lateinit var mediaPlayer: MediaPlayer
     private lateinit var vibrator: Vibrator
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         Repositories.init(requireActivity().applicationContext)
@@ -70,7 +81,6 @@ class SignalFragment(
         else {
             binding.pulsator.start()
             binding.repeatButton.setOnClickListener {
-                settings.repetitions -= 1
                 dropAndRepeatFragment()
             }
         }
@@ -87,21 +97,99 @@ class SignalFragment(
     }
 
     fun dropAndRepeatFragment() {
-        lifecycleScope.launch {
+        settings!!.repetitions -= 1
+        if(settings!!.repetitions > -1) {
+            lifecycleScope.launch {
                 val ctx = requireContextOrNull()
                 if (ctx == null) {
                     Log.e("dropAndRepeatFragment", "Context is null")
                     return@launch
                 }
                 MyAlarmManager(ctx, alarmPlug, Settings(0)).endProcess()
-                MyAlarmManager(ctx, alarmPlug, settings!!).repeatProcess()
+                MyAlarmManager(ctx, alarmPlug, settings).repeatProcess()
+                showTurnOffNotification()
                 requireActivity().onBackPressedDispatcher.onBackPressed()
+            }
         }
     }
 
     // Helper function to safely get context
     private fun Fragment.requireContextOrNull(): Context? {
         return if (isAdded) requireContext() else null
+    }
+
+    @SuppressLint("LaunchActivityFromNotification")
+    fun showTurnOffNotification() {
+        val notificationManager =
+            requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val channelId = "basic_channel_id"
+        val channelName = "Basic Notifications"
+
+        val channel =
+            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH).apply {
+                enableLights(true)
+                lightColor = android.graphics.Color.RED
+                enableVibration(true)
+                description = "Alarm notification"
+            }
+        notificationManager.createNotificationChannel(channel)
+
+        val updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
+            .setInputData(workDataOf("alarmId" to id, "enabled" to 0))
+            .build()
+
+        WorkManager.getInstance(requireContext()).enqueue(updateWorkRequest)
+
+        val filter = IntentFilter(LOCAL_BROADCAST_KEY3)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(turnOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        }
+        val turnOffIntent = Intent(LOCAL_BROADCAST_KEY3).apply {
+            putExtra("alarmId", id)
+            putExtra("notificationId",3)
+        }
+        val turnOffPendingIntent = PendingIntent.getBroadcast(
+            requireContext(),
+            0,
+            turnOffIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val calendar = Calendar.getInstance(ULocale.ROOT)
+        calendar.timeInMillis = System.currentTimeMillis() + settings!!.interval.toLong()*60000
+        val hours = calendar.get(Calendar.HOUR_OF_DAY)
+        val minutes = calendar.get(Calendar.MINUTE)
+        var hoursText = hours.toString()
+        var minutesText = minutes.toString()
+        if(hours <= 9) hoursText = "0$hoursText"
+        if(minutes <= 9) minutesText = "0$minutesText"
+        val notificationBuilder = NotificationCompat.Builder(requireContext(), channelId)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle("Будильник")
+            .setContentText("Повтор сигнала сработает в $hoursText:$minutesText")
+            .addAction(R.drawable.ic_clear, "Turn Off", turnOffPendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setFullScreenIntent(turnOffPendingIntent, true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setAutoCancel(true)
+
+        notificationManager.notify(3, notificationBuilder.build())
+    }
+
+    private val turnOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val cont = context
+            uiScope.launch {
+                val alarmId = intent.getLongExtra("alarmId", 0)
+                val notificationId = intent.getIntExtra("notificationId",-1)
+                val alarmPlug = Alarm(alarmId)
+                MyAlarmManager(cont, alarmPlug, Settings(0)).endProcess()
+                val notificationManager =
+                    cont.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                notificationManager.cancel(notificationId)
+            }
+        }
     }
 
     private fun selectMelody(settings: Settings) {
@@ -143,3 +231,4 @@ class SignalFragment(
     }
 }
 const val LOCAL_BROADCAST_KEY2 = "alarm_update"
+const val LOCAL_BROADCAST_KEY3 = "alarm_turnoff"
