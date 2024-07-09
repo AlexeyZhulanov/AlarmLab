@@ -1,13 +1,10 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Rect
 import android.icu.util.Calendar
 import android.icu.util.ULocale
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,18 +13,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.FragmentAlarmBinding
 import com.example.alarm.model.Alarm
-import com.example.alarm.model.AlarmService
-import com.example.alarm.model.AlarmsListener
-import com.example.alarm.model.MyAlarmManager
-import com.example.alarm.model.Settings
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -160,7 +151,6 @@ class AlarmFragment : Fragment() {
                     }).show(childFragmentManager, "AddTag")
                 }
         alarmViewModel.initCompleted.observe(viewLifecycleOwner) {
-            Log.d("test","Works!")
             if (it) {
                 updateJob = lifecycleScope.launch {
                     millisToAlarm = fillAlarmsTime()
@@ -216,7 +206,6 @@ class AlarmFragment : Fragment() {
         }
     }
     private fun updateBar(): String {
-        Log.d("testBar", millisToAlarm.toString())
         var txt: String = ""
         if(millisToAlarm.isEmpty()) txt += "Все сигналы\nвыключены"
         else {

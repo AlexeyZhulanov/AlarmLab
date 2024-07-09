@@ -2,21 +2,12 @@ package com.example.alarm
 
 import android.annotation.SuppressLint
 import android.text.Html
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.ItemAlarmBinding
 import com.example.alarm.model.Alarm
-import com.example.alarm.model.AlarmService
-import com.example.alarm.model.Settings
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 interface AlarmActionListener {
     fun onAlarmEnabled(alarm: Alarm, index: Int)

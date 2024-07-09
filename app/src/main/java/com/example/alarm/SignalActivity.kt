@@ -2,7 +2,6 @@ package com.example.alarm
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -50,7 +49,6 @@ class SignalActivity : AppCompatActivity() {
         val alarmName = intent.getStringExtra("alarmName") ?: ""
         val alarmId = intent.getLongExtra("alarmId", 0)
         val settings = IntentCompat.getParcelableExtra(intent, "settings", Settings::class.java)
-        Log.d("testSignActivity", settings.toString())
         if (savedInstanceState == null) {
             supportFragmentManager
                 .beginTransaction()

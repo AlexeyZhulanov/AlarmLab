@@ -1,13 +1,8 @@
 package com.example.alarm
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.content.Context.LAYOUT_INFLATER_SERVICE
-import android.content.SharedPreferences
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.preference.PreferenceManager
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -18,23 +13,17 @@ import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.alarm.databinding.FragmentSettingsBinding
-import com.example.alarm.model.AlarmService
 import com.example.alarm.model.Settings
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class SettingsFragment : Fragment() {

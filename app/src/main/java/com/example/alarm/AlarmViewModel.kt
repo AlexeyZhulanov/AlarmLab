@@ -2,8 +2,6 @@ package com.example.alarm
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel

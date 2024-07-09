@@ -8,14 +8,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
+import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
-import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -41,7 +40,6 @@ class AlarmReceiver : BroadcastReceiver() {
         val name = intent.getStringExtra("alarmName")
         val id = intent.getLongExtra("alarmId", 0)
         val settings = IntentCompat.getParcelableExtra(intent, "settings", Settings::class.java)
-        Log.d("testReceiver", settings.toString())
         if (!AppVisibilityTracker.isScreenOn()) {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
             @Suppress("DEPRECATION") val wakeLock = powerManager.newWakeLock(
@@ -89,6 +87,18 @@ class AlarmReceiver : BroadcastReceiver() {
 
 
         selectMelody(settings, context)
+        // Volume settings
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, currentVolume, 0)
+
+        // Set volume attributes
+        mediaPlayer.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+        )
         mediaPlayer.isLooping = true
 
         val filter = IntentFilter(LOCAL_BROADCAST_KEY2)
@@ -106,7 +116,7 @@ class AlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         val notificationBuilder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_alarm_adaptive_fore)
             .setContentTitle("Будильник")
             .setContentText("Нажмите, чтобы отключить будильник")
             .addAction(R.drawable.ic_clear, "Turn Off", turnOffPendingIntent)

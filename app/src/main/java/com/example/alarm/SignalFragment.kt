@@ -8,11 +8,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.SharedPreferences
 import android.icu.util.Calendar
 import android.icu.util.ULocale
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -25,23 +26,18 @@ import android.view.ViewGroup
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.example.alarm.Repositories.alarmRepository
 import com.example.alarm.databinding.FragmentSignalBinding
 import com.example.alarm.model.Alarm
-import com.example.alarm.model.AlarmService
 import com.example.alarm.model.MyAlarmManager
 import com.example.alarm.model.Settings
 import com.ncorti.slidetoact.SlideToActView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class SignalFragment(
     val name: String,
@@ -56,7 +52,6 @@ class SignalFragment(
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        Repositories.init(requireActivity().applicationContext)
         val binding = FragmentSignalBinding.inflate(inflater, container, false)
 
         val updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
@@ -163,7 +158,7 @@ class SignalFragment(
         if(hours <= 9) hoursText = "0$hoursText"
         if(minutes <= 9) minutesText = "0$minutesText"
         val notificationBuilder = NotificationCompat.Builder(requireContext(), channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_alarm_adaptive_fore)
             .setContentTitle("Будильник")
             .setContentText("Повтор сигнала сработает в $hoursText:$minutesText")
             .addAction(R.drawable.ic_clear, "Turn Off", turnOffPendingIntent)
@@ -193,7 +188,7 @@ class SignalFragment(
     }
 
     private fun selectMelody(settings: Settings) {
-        mediaPlayer = when(settings.melody) {
+        mediaPlayer = when (settings.melody) {
             getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.default_signal1)
             getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.default_signal2)
             getString(R.string.melody3) -> MediaPlayer.create(context, R.raw.default_signal3)
@@ -208,8 +203,33 @@ class SignalFragment(
             getString(R.string.melody12) -> MediaPlayer.create(context, R.raw.introduction_signal)
             else -> MediaPlayer.create(context, R.raw.default_signal1)
         }
-        mediaPlayer.isLooping = true
-        mediaPlayer.start()
+        // Volume settings
+        val audioManager = context?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, currentVolume, 0)
+
+        // Set volume attributes
+        mediaPlayer.setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+        )
+        val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            .setOnAudioFocusChangeListener { }
+            .build()
+
+        val result = audioManager.requestAudioFocus(focusRequest)
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            mediaPlayer.isLooping = true
+            mediaPlayer.start()
+        }
     }
 
     private fun startVibrator() {
