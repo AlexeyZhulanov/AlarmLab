@@ -9,11 +9,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.IntentCompat
 import androidx.work.OneTimeWorkRequestBuilder
@@ -32,6 +34,9 @@ import kotlinx.coroutines.launch
 class AlarmReceiver : BroadcastReceiver() {
 
     private lateinit var mediaPlayer: MediaPlayer
+    private lateinit var audioManager: AudioManager
+    private lateinit var focusRequest: AudioFocusRequest
+    private var originalMusicVolume: Int = 0
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
@@ -66,7 +71,7 @@ class AlarmReceiver : BroadcastReceiver() {
     @SuppressLint("LaunchActivityFromNotification")
     private fun showBasicTurnOffNotification(context: Context, id: Long, settings: Settings?) {
         val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "basic_channel_id"
         val channelName = "Basic Notifications"
 
@@ -87,35 +92,47 @@ class AlarmReceiver : BroadcastReceiver() {
 
 
         selectMelody(settings, context)
-        // Volume settings
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, currentVolume, 0)
-
-        // Set volume attributes
+        mediaPlayer.isLooping = true
         mediaPlayer.setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
         )
-        mediaPlayer.isLooping = true
+        audioManager = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        // Store original music volume
+        originalMusicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+
+        // Get current alarm volume
+        val currentAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+
+        // Set music volume to match alarm volume
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentAlarmVolume, 0)
+
+        // Build AudioFocusRequest
+        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            ).build()
 
         val filter = IntentFilter(LOCAL_BROADCAST_KEY2)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(turnOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+            context.applicationContext.registerReceiver(turnOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         }
         val turnOffIntent = Intent(LOCAL_BROADCAST_KEY2).apply {
             putExtra("alarmId", id)
             putExtra("notificationId",2)
         }
         val turnOffPendingIntent = PendingIntent.getBroadcast(
-            context,
+            context.applicationContext,
             0,
             turnOffIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val notificationBuilder = NotificationCompat.Builder(context, channelId)
+        val notificationBuilder = NotificationCompat.Builder(context.applicationContext, channelId)
             .setSmallIcon(R.mipmap.ic_alarm_adaptive_fore)
             .setContentTitle("Будильник")
             .setContentText("Нажмите, чтобы отключить будильник")
@@ -126,11 +143,12 @@ class AlarmReceiver : BroadcastReceiver() {
             .setFullScreenIntent(turnOffPendingIntent, true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-
-        notificationBuilder.setSound(Uri.parse("android.resource://${context.packageName}/${R.raw.signal}"))
+        audioManager.requestAudioFocus(focusRequest)
         mediaPlayer.start()
         mediaPlayer.setOnCompletionListener {
             mediaPlayer.release() // Clear resources mediaPlayer
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0) // Restore original music volume
+            audioManager.abandonAudioFocusRequest(focusRequest) // Abandon audio focus request
         }
         notificationManager.notify(2, notificationBuilder.build())
     }
@@ -155,8 +173,12 @@ class AlarmReceiver : BroadcastReceiver() {
 
     private val turnOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val cont = context
+            val cont = context.applicationContext
+            Log.d("testOff", "Yes")
             mediaPlayer.stop()
+            mediaPlayer.release() // Clear resources mediaPlayer
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0) // Restore original music volume
+            audioManager.abandonAudioFocusRequest(focusRequest) // Abandon audio focus request
             uiScope.launch {
                 val alarmId = intent.getLongExtra("alarmId", 0)
                 val notificationId = intent.getIntExtra("notificationId", -1)

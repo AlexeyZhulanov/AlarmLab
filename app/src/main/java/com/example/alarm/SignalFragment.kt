@@ -14,6 +14,8 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.media.SoundPool
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -38,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class SignalFragment(
     val name: String,
@@ -48,6 +51,9 @@ class SignalFragment(
     private val alarmPlug = Alarm(id = id, name = name)
     private lateinit var mediaPlayer: MediaPlayer
     private lateinit var vibrator: Vibrator
+    private lateinit var audioManager: AudioManager
+    private lateinit var focusRequest: AudioFocusRequest
+    private var originalMusicVolume: Int = 0
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
@@ -188,6 +194,7 @@ class SignalFragment(
     }
 
     private fun selectMelody(settings: Settings) {
+        audioManager = context?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         mediaPlayer = when (settings.melody) {
             getString(R.string.melody1) -> MediaPlayer.create(context, R.raw.default_signal1)
             getString(R.string.melody2) -> MediaPlayer.create(context, R.raw.default_signal2)
@@ -203,33 +210,32 @@ class SignalFragment(
             getString(R.string.melody12) -> MediaPlayer.create(context, R.raw.introduction_signal)
             else -> MediaPlayer.create(context, R.raw.default_signal1)
         }
-        // Volume settings
-        val audioManager = context?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, currentVolume, 0)
+            mediaPlayer.isLooping = true
+            mediaPlayer.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            // Store original music volume
+            originalMusicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 
-        // Set volume attributes
-        mediaPlayer.setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build()
-        )
-        val focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            // Get current alarm volume
+            val currentAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
+
+            // Set music volume to match alarm volume
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentAlarmVolume, 0)
+
+        // Build AudioFocusRequest
+        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build()
-            )
-            .setOnAudioFocusChangeListener { }
-            .build()
-
-        val result = audioManager.requestAudioFocus(focusRequest)
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            mediaPlayer.isLooping = true
-            mediaPlayer.start()
-        }
+            ).build()
+        audioManager.requestAudioFocus(focusRequest)
+        mediaPlayer.start()
     }
 
     private fun startVibrator() {
@@ -247,6 +253,9 @@ class SignalFragment(
     override fun onDestroyView() {
         super.onDestroyView()
         mediaPlayer.stop()
+        mediaPlayer.release()
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0) // Restore original music volume
+        audioManager.abandonAudioFocusRequest(focusRequest) // Abandon audio focus request
         if(settings!!.vibration == 1) vibrator.cancel()
     }
 }
