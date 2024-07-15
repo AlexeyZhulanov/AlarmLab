@@ -259,5 +259,4 @@ class SignalFragment(
         if(settings!!.vibration == 1) vibrator.cancel()
     }
 }
-const val LOCAL_BROADCAST_KEY2 = "alarm_update"
 const val LOCAL_BROADCAST_KEY3 = "alarm_turnoff"

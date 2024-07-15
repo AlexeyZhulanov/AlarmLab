@@ -1,5 +1,6 @@
 package com.example.alarm
 
+import VolumeAdjusterWorker
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -14,6 +15,7 @@ import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -70,18 +72,16 @@ class AlarmReceiver : BroadcastReceiver() {
 
     @SuppressLint("LaunchActivityFromNotification")
     private fun showBasicTurnOffNotification(context: Context, id: Long, settings: Settings?) {
-        val notificationManager =
-            context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val channelId = "basic_channel_id"
         val channelName = "Basic Notifications"
 
-        val channel =
-            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH).apply {
-                enableLights(true)
-                lightColor = android.graphics.Color.RED
-                enableVibration(true)
-                description = "Alarm notification"
-            }
+        val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH).apply {
+            enableLights(true)
+            lightColor = android.graphics.Color.RED
+            enableVibration(true)
+            description = "Alarm notification"
+        }
         notificationManager.createNotificationChannel(channel)
 
         val updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
@@ -90,24 +90,9 @@ class AlarmReceiver : BroadcastReceiver() {
 
         WorkManager.getInstance(context).enqueue(updateWorkRequest)
 
-
-        selectMelody(settings, context)
-        mediaPlayer.isLooping = true
-        mediaPlayer.setAudioAttributes(
-            AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ALARM)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .build()
-        )
-        audioManager = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         // Store original music volume
         originalMusicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-
-        // Get current alarm volume
-        val currentAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
-
-        // Set music volume to match alarm volume
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentAlarmVolume, 0)
 
         // Build AudioFocusRequest
         focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -118,21 +103,41 @@ class AlarmReceiver : BroadcastReceiver() {
                     .build()
             ).build()
 
+        val audioFocusResult = audioManager.requestAudioFocus(focusRequest)
+
+        if (audioFocusResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            // Set music volume to match alarm volume before starting playback
+            val volumeAdjusterRequest = OneTimeWorkRequestBuilder<VolumeAdjusterWorker>().build()
+            WorkManager.getInstance(context).enqueue(volumeAdjusterRequest)
+            selectMelody(settings, context)
+            mediaPlayer.isLooping = true
+            mediaPlayer.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            mediaPlayer.start()
+
+        } else {
+            Log.d("AudioFocus", "Failed to gain audio focus")
+        }
+
         val filter = IntentFilter(LOCAL_BROADCAST_KEY2)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.applicationContext.registerReceiver(turnOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         }
         val turnOffIntent = Intent(LOCAL_BROADCAST_KEY2).apply {
             putExtra("alarmId", id)
-            putExtra("notificationId",2)
+            putExtra("notificationId", 2)
         }
         val turnOffPendingIntent = PendingIntent.getBroadcast(
-            context.applicationContext,
+            context,
             0,
             turnOffIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val notificationBuilder = NotificationCompat.Builder(context.applicationContext, channelId)
+        val notificationBuilder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.mipmap.ic_alarm_adaptive_fore)
             .setContentTitle("Будильник")
             .setContentText("Нажмите, чтобы отключить будильник")
@@ -143,13 +148,6 @@ class AlarmReceiver : BroadcastReceiver() {
             .setFullScreenIntent(turnOffPendingIntent, true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
-        audioManager.requestAudioFocus(focusRequest)
-        mediaPlayer.start()
-        mediaPlayer.setOnCompletionListener {
-            mediaPlayer.release() // Clear resources mediaPlayer
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0) // Restore original music volume
-            audioManager.abandonAudioFocusRequest(focusRequest) // Abandon audio focus request
-        }
         notificationManager.notify(2, notificationBuilder.build())
     }
 
@@ -173,7 +171,7 @@ class AlarmReceiver : BroadcastReceiver() {
 
     private val turnOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val cont = context.applicationContext
+            val cont = context
             Log.d("testOff", "Yes")
             mediaPlayer.stop()
             mediaPlayer.release() // Clear resources mediaPlayer
@@ -190,5 +188,5 @@ class AlarmReceiver : BroadcastReceiver() {
             }
         }
     }
-
 }
+const val LOCAL_BROADCAST_KEY2 = "alarm_update"
