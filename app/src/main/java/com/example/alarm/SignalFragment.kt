@@ -14,8 +14,6 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
-import android.media.RingtoneManager
-import android.media.SoundPool
 import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
@@ -27,7 +25,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.app.NotificationCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -90,7 +87,7 @@ class SignalFragment(
         }
         binding.slideButton.onSlideCompleteListener = object : SlideToActView.OnSlideCompleteListener {
             override fun onSlideComplete(view: SlideToActView) {
-                lifecycleScope.launch {
+                uiScope.launch {
                     MyAlarmManager(fragmentContext, alarmPlug, Settings(0)).endProcess()
                 }
                 requireActivity().onBackPressedDispatcher.onBackPressed()
