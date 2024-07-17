@@ -39,6 +39,8 @@ import com.ncorti.slidetoact.SlideToActView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -58,6 +60,7 @@ class SignalFragment(
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        Log.d("testSignalFrag", "works")
         val binding = FragmentSignalBinding.inflate(inflater, container, false)
 
         val updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
@@ -100,7 +103,7 @@ class SignalFragment(
     fun dropAndRepeatFragment() {
         settings!!.repetitions -= 1
         if(settings!!.repetitions > -1) {
-            lifecycleScope.launch {
+            uiScope.launch {
                 val ctx = requireContextOrNull()
                 if (ctx == null) {
                     Log.e("dropAndRepeatFragment", "Context is null")

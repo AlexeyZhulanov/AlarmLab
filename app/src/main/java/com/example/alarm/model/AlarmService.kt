@@ -58,7 +58,6 @@ class AlarmService(
                 )
             }
         }
-        Log.d("testAlarmsGet", alarms.toString())
         return@withContext alarms
     }
 
@@ -98,7 +97,6 @@ class AlarmService(
 
     override suspend fun updateEnabled(id: Long, enabled: Int) = withContext(Dispatchers.IO) {
         alarmDao.updateEnabled(AlarmUpdateEnabledTuple(id, enabled))
-        Log.d("testUpdate", "id: $id, enabled: $enabled")
         alarms = getAlarms()
     }
 

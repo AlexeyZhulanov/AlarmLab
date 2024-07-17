@@ -42,6 +42,7 @@ class AlarmReceiver : BroadcastReceiver() {
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
 
+    @SuppressLint("Wakelock")
     override fun onReceive(context: Context, intent: Intent) {
         AppVisibilityTracker.initialize(context)
         val name = intent.getStringExtra("alarmName")
@@ -53,7 +54,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 PowerManager.FULL_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE,
                 "MyApp:AlarmWakeLockTag"
             )
-            wakeLock.acquire(10 * 60 * 1000L /* 10 minutes */)
+            wakeLock.acquire(3 * 60 * 1000L /* 3 minutes */)
 
             val signalIntent = Intent(context, SignalActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -172,7 +173,6 @@ class AlarmReceiver : BroadcastReceiver() {
     private val turnOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val cont = context
-            Log.d("testOff", "Yes")
             mediaPlayer.stop()
             mediaPlayer.release() // Clear resources mediaPlayer
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0) // Restore original music volume

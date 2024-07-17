@@ -32,7 +32,6 @@ class MyAlarmManager(
             if(!isEnd) {
                 intent.putExtra("alarmName", alarm.name)
                 intent.putExtra("alarmId", alarm.id)
-                Log.d("testSettingsInit", settings.toString())
                 intent.putExtra("settings", settings)
             }
             intent.action = "com.example.alarm.ALARM_TRIGGERED"
@@ -47,7 +46,6 @@ class MyAlarmManager(
 
     suspend fun startProcess() {
         initialFunc(false)
-        Log.d("testStart", settings.toString())
         val part = uiScope.async {
             calendar.set(Calendar.HOUR_OF_DAY, alarm.timeHours)
             calendar.set(Calendar.MINUTE, alarm.timeMinutes)
