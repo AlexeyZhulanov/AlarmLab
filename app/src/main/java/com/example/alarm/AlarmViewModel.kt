@@ -148,7 +148,7 @@ class AlarmViewModel @Inject constructor(
     }
     fun unregisterPreferences(context: Context) {
         val prefs = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE)
-        prefs.registerOnSharedPreferenceChangeListener(preferenceChangeListener)
+        prefs.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener)
     }
 
     private val preferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
