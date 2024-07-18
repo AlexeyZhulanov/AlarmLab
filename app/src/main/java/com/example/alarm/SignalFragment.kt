@@ -36,10 +36,7 @@ import com.ncorti.slidetoact.SlideToActView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 class SignalFragment(
     val name: String,
@@ -127,11 +124,12 @@ class SignalFragment(
         val channelName = "Basic Notifications"
 
         val channel =
-            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH).apply {
+            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW).apply {
                 enableLights(true)
                 lightColor = android.graphics.Color.RED
                 enableVibration(true)
                 description = "Alarm notification"
+                setSound(null, null)
             }
         notificationManager.createNotificationChannel(channel)
 
@@ -171,6 +169,7 @@ class SignalFragment(
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setSound(null)
             .setFullScreenIntent(turnOffPendingIntent, true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)

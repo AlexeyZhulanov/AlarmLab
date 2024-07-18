@@ -14,7 +14,6 @@ interface AlarmActionListener {
     fun onAlarmChange(alarm: Alarm)
     fun onAlarmLongClicked()
 }
-
 class AlarmsAdapter(
     private val interval: Int,
     private val actionListener: AlarmActionListener
