@@ -21,11 +21,12 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import com.example.alarm.databinding.ActivityMainBinding;
+import com.example.alarm.model.AlarmService;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import dagger.hilt.android.AndroidEntryPoint;
-import kotlinx.coroutines.CoroutineScope;
-import kotlinx.coroutines.Dispatchers;
-import kotlinx.coroutines.Job;
-import kotlinx.coroutines.launch;
 import javax.inject.Inject;
 
 @AndroidEntryPoint
@@ -34,8 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     @Inject
     AlarmService alarmsService;
-    private final Job job = new Job();
-    private final CoroutineScope uiScope = CoroutineScope(Dispatchers.Main + job);
+    private ExecutorService uiExecutor = Executors.newSingleThreadExecutor();
+    public static String APP_PREFERENCES = "APP_PREFERENCES";
+    public static String PREF_THEME = "PREF_THEME";
 
     private Fragment currentFragment() {
         return getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
@@ -113,15 +115,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.open_settings:
+            case 1000037:
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragmentContainer, new SettingsFragment())
                         .addToBackStack("settings")
                         .commit();
                 return true;
-            case R.id.off_alarms:
-                uiScope.launch(() -> {
+            case 1000088:
+                uiExecutor.execute(() -> {
                     alarmsService.offAlarms(getApplicationContext());
                     ((AlarmFragment) getSupportFragmentManager().findFragmentByTag("ALARM_FRAGMENT_TAG")).fillAndUpdateBar();
                 });

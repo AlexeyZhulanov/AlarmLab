@@ -1,8 +1,13 @@
+package com.example.alarm;
+
 import android.content.Context;
 import android.media.AudioManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.work.CoroutineWorker;
 import androidx.work.WorkerParameters;
+
+import kotlin.coroutines.Continuation;
 
 public class VolumeAdjusterWorker extends CoroutineWorker {
 
@@ -10,9 +15,9 @@ public class VolumeAdjusterWorker extends CoroutineWorker {
         super(appContext, workerParams);
     }
 
-    @NonNull
+    @Nullable
     @Override
-    public Result doWork() {
+    public Object doWork(@NonNull Continuation<? super Result> continuation) {
         AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
 
         // Get current alarm volume

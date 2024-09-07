@@ -4,7 +4,6 @@ import androidx.room.Dao;
 import androidx.room.Query;
 import androidx.room.Update;
 
-import kotlinx.coroutines.flow.Flow;
 
 @Dao
 public interface SettingsDao {

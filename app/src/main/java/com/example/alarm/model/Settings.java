@@ -32,6 +32,40 @@ public class Settings implements Parcelable {
         disableType = in.readInt();
     }
 
+    public long getId() {
+        return id;
+    }
+    public String getMelody() {
+        return melody;
+    }
+    public int getVibration() {
+        return vibration;
+    }
+    public int getInterval() {
+        return interval;
+    }
+    public int getRepetitions() {
+        return repetitions;
+    }
+    public int getDisableType() {
+        return disableType;
+    }
+    public void setMelody(String melody) {
+        this.melody = melody;
+    }
+    public void setVibration(int vibration) {
+        this.vibration = vibration;
+    }
+    public void setInterval(int interval) {
+        this.interval = interval;
+    }
+    public void setRepetitions(int repetitions) {
+        this.repetitions = repetitions;
+    }
+    public void setDisableType(int disableType) {
+        this.disableType = disableType;
+    }
+
     public static final Creator<Settings> CREATOR = new Creator<Settings>() {
         @Override
         public Settings createFromParcel(Parcel in) {
@@ -58,6 +92,4 @@ public class Settings implements Parcelable {
         parcel.writeInt(repetitions);
         parcel.writeInt(disableType);
     }
-
-    // Getters and setters
 }

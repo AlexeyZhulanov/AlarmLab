@@ -5,20 +5,27 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-import androidx.fragment.app.viewModels;
-import androidx.lifecycle.lifecycleScope;
+
+import androidx.lifecycle.ViewModelProvider;
+
 import com.example.alarm.databinding.FragmentBottomsheetBinding;
+import com.example.alarm.model.Alarm;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import dagger.hilt.android.AndroidEntryPoint;
-import kotlinx.coroutines.launch;
 
 @AndroidEntryPoint
 public class BottomSheetFragment extends BottomSheetDialogFragment {
     private final boolean isAdd;
     private final Alarm oldAlarm;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final BottomSheetListener bottomSheetListener;
     private FragmentBottomsheetBinding binding;
-    private final AlarmViewModel alarmViewModel = new AlarmViewModel(); // You may need to use dependency injection
+    private final AlarmViewModel alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
 
     public BottomSheetFragment(boolean isAdd, Alarm oldAlarm, BottomSheetListener bottomSheetListener) {
         this.isAdd = isAdd;
@@ -35,10 +42,10 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
             binding.timePicker.setMinute(0);
         } else {
             binding.heading.setText("Изменить будильник");
-            binding.timePicker.setHour(oldAlarm.timeHours);
-            binding.timePicker.setMinute(oldAlarm.timeMinutes);
-            if (!oldAlarm.name.equals("default") && !oldAlarm.name.isEmpty()) {
-                binding.signalName.setText(oldAlarm.name);
+            binding.timePicker.setHour(oldAlarm.getTimeHours());
+            binding.timePicker.setMinute(oldAlarm.getTimeMinutes());
+            if (!oldAlarm.getName().equals("default") && !oldAlarm.getName().isEmpty()) {
+                binding.signalName.setText(oldAlarm.getName());
             }
         }
 
@@ -60,38 +67,46 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     private void addNewAlarm() {
-        Alarm alarm = new Alarm(
-                0,
-                binding.timePicker.getHour(),
-                binding.timePicker.getMinute(),
-                binding.signalName.getText().toString().isEmpty() ? "default" : binding.signalName.getText().toString(),
-                1
-        );
-        lifecycleScope.launch(() -> {
-            if (alarmViewModel.addAlarm(alarm, requireContext())) {
-                bottomSheetListener.onAddAlarm(alarm);
-            } else {
-                Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
-            }
-            dismiss();
+        Alarm alarm = new Alarm(0);
+        alarm.setTimeHours(binding.timePicker.getHour());
+        alarm.setTimeMinutes(binding.timePicker.getMinute());
+        alarm.setName(binding.signalName.getText().toString().isEmpty() ? "default" : binding.signalName.getText().toString());
+        alarm.setEnabled(1);
+
+        executorService.execute(() -> {
+            alarmViewModel.addAlarm(alarm, requireContext(), new AlarmCallback() {
+                @Override
+                public void onResult(boolean result) {
+                    if(result) {
+                        bottomSheetListener.onAddAlarm(alarm);
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
+                    }
+                    dismiss();
+                }
+            });
         });
     }
 
     private void changeAlarm(Alarm oldAlarm) {
-        Alarm alarmNew = new Alarm(
-                oldAlarm.id,
-                binding.timePicker.getHour(),
-                binding.timePicker.getMinute(),
-                binding.signalName.getText().toString().isEmpty() ? "default" : binding.signalName.getText().toString(),
-                oldAlarm.enabled
-        );
-        lifecycleScope.launch(() -> {
-            if (alarmViewModel.updateAlarm(alarmNew, requireContext())) {
-                bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew);
-            } else {
-                Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
-            }
-            dismiss();
+        Alarm alarmNew = new Alarm(oldAlarm.getId());
+        alarmNew.setTimeHours(binding.timePicker.getHour());
+        alarmNew.setTimeMinutes(binding.timePicker.getMinute());
+        alarmNew.setName(binding.signalName.getText().toString().isEmpty() ? "default" : binding.signalName.getText().toString());
+        alarmNew.setEnabled(oldAlarm.getEnabled());
+
+        executorService.execute(() -> {
+            alarmViewModel.updateAlarm(alarmNew, requireContext(), new AlarmCallback() {
+                @Override
+                public void onResult(boolean result) {
+                    if(result) {
+                        bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew);
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
+                    }
+                    dismiss();
+                }
+            });
         });
     }
 }

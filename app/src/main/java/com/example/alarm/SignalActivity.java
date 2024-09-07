@@ -2,23 +2,27 @@ package com.example.alarm;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.IntentCompat;
-import androidx.lifecycle.lifecycleScope;
 import com.example.alarm.databinding.ActivitySignalBinding;
+import com.example.alarm.model.Settings;
+
 import dagger.hilt.android.AndroidEntryPoint;
-import kotlinx.coroutines.Job;
-import kotlinx.coroutines.delay;
-import kotlinx.coroutines.launch;
 
 @AndroidEntryPoint
 public class SignalActivity extends AppCompatActivity {
 
     private ActivitySignalBinding binding;
     private boolean isHomePressed = false;
-    private Job homePressResetJob;
+    private Handler homePressResetHandler;
+    private Runnable homePressResetRunnable;
+
+    public static String APP_PREFERENCES = "APP_PREFERENCES";
+    public static String PREF_THEME = "PREF_THEME";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,8 +42,6 @@ public class SignalActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivitySignalBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
-        @SuppressWarnings("deprecation")
                 getWindow().addFlags(
                 WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
                         WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD |
@@ -47,10 +49,18 @@ public class SignalActivity extends AppCompatActivity {
                         WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
         );
 
-        String alarmName = getIntent().getStringExtra("alarmName", "");
+        String alarmName = getIntent().getStringExtra("alarmName");
         long alarmId = getIntent().getLongExtra("alarmId", 0);
         Settings settings = IntentCompat.getParcelableExtra(getIntent(), "settings", Settings.class);
 
+        homePressResetHandler = new Handler(Looper.getMainLooper());
+
+        homePressResetRunnable = new Runnable() {
+            @Override
+            public void run() {
+                isHomePressed = false;
+            }
+        };
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer2, new SignalFragment(alarmName, alarmId, settings))
@@ -82,20 +92,24 @@ public class SignalActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         isHomePressed = true;
-        if (homePressResetJob != null) {
-            homePressResetJob.cancel();
-        }
-        homePressResetJob = lifecycleScope.launch(() -> {
-            delay(1000);
-            isHomePressed = false;
-        });
+        homePressResetHandler.removeCallbacks(homePressResetRunnable);
+        homePressResetHandler.postDelayed(homePressResetRunnable, 1000);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         if (isHomePressed) {
-            ((SignalFragment) getSupportFragmentManager().findFragmentById(R.id.fragmentContainer2)).dropAndRepeatFragment();
+            SignalFragment fragment = (SignalFragment) getSupportFragmentManager().findFragmentById(R.id.fragmentContainer2);
+            if (fragment != null) {
+                fragment.dropAndRepeatFragment();
+            }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        homePressResetHandler.removeCallbacks(homePressResetRunnable);
     }
 }

@@ -35,7 +35,12 @@ public class AlarmDbEntity {
     }
 
     public Alarm toAlarm() {
-        return new Alarm(id, timeHours, timeMinutes, name, enabled);
+        Alarm alarm = new Alarm(id);
+        alarm.setTimeHours(timeHours);
+        alarm.setTimeMinutes(timeMinutes);
+        alarm.setName(name);
+        alarm.setEnabled(enabled);
+        return alarm;
     }
 
     public static AlarmDbEntity fromUserInput(Alarm alarm) {

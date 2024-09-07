@@ -1,7 +1,6 @@
 package com.example.alarm;
 
 import android.annotation.SuppressLint;
-import android.graphics.Rect;
 import android.icu.util.Calendar;
 import android.icu.util.ULocale;
 import android.os.Bundle;
@@ -12,21 +11,14 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.viewModels;
-import androidx.lifecycle.lifecycleScope;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.alarm.databinding.FragmentAlarmBinding;
 import com.example.alarm.model.Alarm;
 import dagger.hilt.android.AndroidEntryPoint;
 import kotlinx.coroutines.Dispatchers;
 import kotlinx.coroutines.Job;
-import kotlinx.coroutines.async;
-import kotlinx.coroutines.delay;
-import kotlinx.coroutines.isActive;
-import kotlinx.coroutines.launch;
-import kotlinx.coroutines.withContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,7 +30,7 @@ public class AlarmFragment extends Fragment {
     private FragmentAlarmBinding binding;
     private Job updateJob;
     private Map<Long, Long> millisToAlarm = new HashMap<>();
-    private final AlarmViewModel alarmViewModel = new AlarmViewModel(); // You may need to use dependency injection
+    private final AlarmViewModel alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
 
     @SuppressLint("DiscouragedApi")
     @Override
@@ -263,16 +255,3 @@ public class AlarmFragment extends Fragment {
     }
 }
 
-class VerticalSpaceItemDecoration extends RecyclerView.ItemDecoration {
-    private final int verticalSpaceHeight;
-
-    public VerticalSpaceItemDecoration(int verticalSpaceHeight) {
-        this.verticalSpaceHeight = verticalSpaceHeight;
-    }
-
-    @Override
-    public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-        super.getItemOffsets(outRect, view, parent, state);
-        outRect.bottom = verticalSpaceHeight;
-    }
-}

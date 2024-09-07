@@ -9,7 +9,6 @@ import android.icu.util.ULocale;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.alarm.AlarmReceiver;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -97,7 +96,7 @@ public class MyAlarmManager {
         executor.execute(() -> {
             initialFunc(false);
             Calendar calendar = Calendar.getInstance(ULocale.ROOT);
-            long time = calendar.getTimeInMillis() + settings.getInterval() * 60000;
+            long time = calendar.getTimeInMillis() + settings.getInterval() * 60000L;
             alarmManager.setAlarmClock(
                     new AlarmManager.AlarmClockInfo(time, alarmIntent),
                     alarmIntent

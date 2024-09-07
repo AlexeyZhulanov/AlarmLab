@@ -9,31 +9,29 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.icu.util.Calendar;
-import android.icu.util.ULocale;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.os.VibratorManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.core.app.NotificationCompat;
 import androidx.fragment.app.Fragment;
-import androidx.work.OneTimeWorkRequestBuilder;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
-import androidx.work.workDataOf;
 import com.example.alarm.databinding.FragmentSignalBinding;
+import com.example.alarm.model.Alarm;
+import com.example.alarm.model.MyAlarmManager;
+import com.example.alarm.model.Settings;
 import com.ncorti.slidetoact.SlideToActView;
-import kotlinx.coroutines.CoroutineScope;
-import kotlinx.coroutines.Dispatchers;
-import kotlinx.coroutines.Job;
-import kotlinx.coroutines.launch;
+
+import java.util.concurrent.Executors;
 
 public class SignalFragment extends Fragment {
 
@@ -43,13 +41,15 @@ public class SignalFragment extends Fragment {
     private AudioManager audioManager;
     private AudioFocusRequest focusRequest;
     private int originalMusicVolume;
-
-    private final Job job = new Job();
-    private final CoroutineScope uiScope = CoroutineScope(Dispatchers.Main + job);
+    private Settings settings;
+    private static final String LOCAL_BROADCAST_KEY3 = "alarm_turnoff";
+    private BroadcastReceiver turnOffReceiver;
 
     public SignalFragment(String name, long id, Settings settings) {
-        this.alarmPlug = new Alarm(id, name);
-        // Initialize additional fields if needed here...
+        Alarm alarm = new Alarm(id);
+        alarm.setName(name);
+        this.alarmPlug = alarm;
+        this.settings = settings;
     }
 
     @Override
@@ -57,47 +57,53 @@ public class SignalFragment extends Fragment {
         Log.d("testSignalFrag", "works");
         FragmentSignalBinding binding = FragmentSignalBinding.inflate(inflater, container, false);
 
-        OneTimeWorkRequest updateWorkRequest = OneTimeWorkRequestBuilder<AlarmWorker>()
-                .setInputData(workDataOf("alarmId", alarmPlug.id, "enabled", 0))
+        // WorkManager with Data.Builder (equivalent of WorkDataOf in Kotlin)
+        Data inputData = new Data.Builder()
+                .putLong("alarmId", alarmPlug.getId())
+                .putInt("enabled", 0)
+                .build();
+
+        OneTimeWorkRequest updateWorkRequest = new OneTimeWorkRequest.Builder(AlarmWorker.class)
+                .setInputData(inputData)
                 .build();
 
         WorkManager.getInstance(requireContext()).enqueue(updateWorkRequest);
-        selectMelody(settings);  // Ensure settings is passed or set a default
-        if(settings.vibration == 1) {
+        selectMelody(settings);
+        if (settings.getVibration() == 1) {
             startVibrator();
         }
 
-        // Handle date and time display
-        String currentTime = Calendar.getInstance().getTime().toString();  // Adjust as needed
-        binding.currentTimeTextView.setText(currentTime);
-        binding.nameTextView.setText(alarmPlug.name);
+        String currentTime = Calendar.getInstance().getTime().toString();
+        String[] str = currentTime.split(" ");
+        String date = str[0] + " " + str[1] + " " + str[2];
+        String[] tmpTime = str[3].split(":");
+        String time = tmpTime[0] + ":" + tmpTime[1];
+        binding.currentDateTextView.setText(date);
+        binding.currentTimeTextView.setText(time);
+        binding.nameTextView.setText(alarmPlug.getName());
 
-        // Repeat button functionality
-        if(settings.repetitions <= 0) {
+        if (settings.getRepetitions() <= 0) {
             binding.repeatButton.setVisibility(View.GONE);
         } else {
             binding.pulsator.start();
             binding.repeatButton.setOnClickListener(v -> dropAndRepeatFragment());
         }
 
-        binding.slideButton.onSlideCompleteListener = new SlideToActView.OnSlideCompleteListener() {
-            @Override
-            public void onSlideComplete(SlideToActView view) {
-                uiScope.launch(() -> {
-                    MyAlarmManager alarmManager = new MyAlarmManager(requireContext(), alarmPlug, new Settings(0));
-                    alarmManager.endProcess();
-                });
-                requireActivity().onBackPressed();
-            }
-        };
+        binding.slideButton.setOnSlideCompleteListener(view -> {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                MyAlarmManager alarmManager = new MyAlarmManager(requireContext(), alarmPlug, new Settings(0));
+                alarmManager.endProcess();
+            });
+            requireActivity().onBackPressed();
+        });
 
         return binding.getRoot();
     }
 
     public void dropAndRepeatFragment() {
-        if (settings.repetitions > 0) {
-            settings.repetitions--;
-            uiScope.launch(() -> {
+        if (settings.getRepetitions() > 0) {
+            settings.setRepetitions(settings.getRepetitions() - 1);
+            Executors.newSingleThreadExecutor().execute(() -> {
                 Context context = requireContextOrNull();
                 if (context == null) {
                     Log.e("dropAndRepeatFragment", "Context is null");
@@ -113,7 +119,7 @@ public class SignalFragment extends Fragment {
     }
 
     private Context requireContextOrNull() {
-        return isAdded ? requireContext() : null;
+        return isAdded() ? requireContext() : null;
     }
 
     @SuppressLint("LaunchActivityFromNotification")
@@ -127,7 +133,7 @@ public class SignalFragment extends Fragment {
         PendingIntent turnOffPendingIntent = PendingIntent.getBroadcast(
                 requireContext(),
                 0,
-                new Intent(LOCAL_BROADCAST_KEY3).putExtra("alarmId", id).putExtra("notificationId", 3),
+                new Intent(LOCAL_BROADCAST_KEY3).putExtra("alarmId", settings.getId()).putExtra("notificationId", 3),
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
@@ -140,40 +146,87 @@ public class SignalFragment extends Fragment {
                 .setAutoCancel(true);
 
         notificationManager.notify(3, notificationBuilder.build());
+
+        // Register the broadcast receiver
+        turnOffReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                long alarmId = intent.getLongExtra("alarmId", -1);
+                if (alarmId == settings.getId()) {
+                    // Handle the alarm turn off here
+                    Log.d("SignalFragment", "Alarm turned off");
+                    notificationManager.cancel(3); // Cancel notification
+                    // Implement other logic to stop the alarm
+                }
+            }
+        };
+        requireContext().registerReceiver(turnOffReceiver, new IntentFilter(LOCAL_BROADCAST_KEY3));
     }
 
     private void selectMelody(Settings settings) {
         audioManager = (AudioManager) requireContext().getSystemService(Context.AUDIO_SERVICE);
-        mediaPlayer = MediaPlayer.create(requireContext(), R.raw.default_signal1); // Update as needed based on settings
+        mediaPlayer = MediaPlayer.create(requireContext(), R.raw.default_signal1);
 
-        // Initialize audio attributes, focus requests, and configure the media player...
+        AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+
+        mediaPlayer.setAudioAttributes(audioAttributes);
         mediaPlayer.setLooping(true);
 
-        // Store original music volume
         originalMusicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        int currentAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentAlarmVolume, 0);
+
+        focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(audioAttributes)
+                .build();
+
+        audioManager.requestAudioFocus(focusRequest);
+
         mediaPlayer.start();
     }
 
     private void startVibrator() {
         vibrator = (Vibrator) requireContext().getSystemService(Context.VIBRATOR_SERVICE);
-        long[] pattern = {0, 100, 300, 200, 250, 300, 200, 400, 150, 300, 150, 200};
-        vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
+        VibrationEffect vibrationEffect = VibrationEffect.createWaveform(new long[]{0, 500, 1000}, 0);
+        vibrator.vibrate(vibrationEffect);
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        mediaPlayer.release();
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0);
-        if (settings.vibration == 1) {
+    public void onPause() {
+        super.onPause();
+        if (mediaPlayer != null) {
+            mediaPlayer.pause();
+        }
+        if (vibrator != null) {
             vibrator.cancel();
         }
     }
 
-    private final BroadcastReceiver turnOffReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // Handle turning off alarm
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
+            mediaPlayer.start();
         }
-    };
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+        }
+        if (vibrator != null) {
+            vibrator.cancel();
+        }
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0);
+        audioManager.abandonAudioFocusRequest(focusRequest);
+        if (turnOffReceiver != null) {
+            requireContext().unregisterReceiver(turnOffReceiver);
+        }
+    }
 }

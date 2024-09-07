@@ -35,7 +35,13 @@ public class SettingsDbEntity {
     }
 
     public Settings toSettings() {
-        return new Settings(id, melody, vibration, interval, repetitions, disableType);
+        Settings settings = new Settings(id);
+        settings.setMelody(melody);
+        settings.setVibration(vibration);
+        settings.setInterval(interval);
+        settings.setRepetitions(repetitions);
+        settings.setDisableType(disableType);
+        return settings;
     }
 
     public static SettingsDbEntity fromUserInput(Settings settings) {

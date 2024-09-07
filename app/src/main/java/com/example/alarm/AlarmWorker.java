@@ -1,9 +1,17 @@
 package com.example.alarm;
 
 import android.content.Context;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.Room;
 import androidx.work.CoroutineWorker;
 import androidx.work.WorkerParameters;
+
+import com.example.alarm.model.AlarmService;
+import com.example.alarm.room.AppDatabase;
+
+import kotlin.coroutines.Continuation;
 
 public class AlarmWorker extends CoroutineWorker {
 
@@ -11,8 +19,10 @@ public class AlarmWorker extends CoroutineWorker {
         super(appContext, workerParams);
     }
 
+
+    @Nullable
     @Override
-    public Result doWork() {
+    public Object doWork(@NonNull Continuation<? super Result> continuation) {
         long alarmId = getInputData().getLong("alarmId", 0L);
         int enabled = getInputData().getInt("enabled", 0);
 

@@ -2,40 +2,53 @@ package com.example.alarm;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Pair;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import androidx.lifecycle.viewModelScope;
+import androidx.room.Update;
+
+import com.example.alarm.model.Alarm;
+import com.example.alarm.model.AlarmService;
 import com.example.alarm.model.AlarmsListener;
+import com.example.alarm.model.MyAlarmManager;
+import com.example.alarm.model.Settings;
+
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import dagger.hilt.android.lifecycle.HiltViewModel;
-import kotlinx.coroutines.Dispatchers;
-import kotlinx.coroutines.async;
-import kotlinx.coroutines.launch;
-import kotlinx.coroutines.withContext;
 
 import javax.inject.Inject;
-
-const String APP_PREFERENCES = "APP_PREFERENCES";
-const String PREF_INTERVAL = "PREF_INTERVAL";
-const String PREF_WALLPAPER = "PREF_WALLPAPER";
-const String PREF_THEME = "PREF_THEME";
 
 @HiltViewModel
 public class AlarmViewModel extends ViewModel {
 
+    private static final String APP_PREFERENCES = "APP_PREFERENCES";
+    private static final String PREF_INTERVAL = "PREF_INTERVAL";
+    private static final String PREF_WALLPAPER = "PREF_WALLPAPER";
+    private static final String PREF_THEME = "PREF_THEME";
+
     private final AlarmService alarmsService;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final MutableLiveData<List<Alarm>> _alarms = new MutableLiveData<>();
-    private final LiveData<List<Alarm>> alarms = _alarms;
+    public LiveData<List<Alarm>> alarms = _alarms;
 
     private final MutableLiveData<Boolean> _initCompleted = new MutableLiveData<>();
-    public LiveData<Boolean> getInitCompleted() { return _initCompleted; }
+    public LiveData<Boolean> getInitCompleted() {
+        return _initCompleted;
+    }
 
     private final MutableLiveData<String> _wallpaper = new MutableLiveData<>();
-    public LiveData<String> getWallpaper() { return _wallpaper; }
+    public LiveData<String> getWallpaper() {
+        return _wallpaper;
+    }
 
     private final AlarmsListener alarmsListener = new AlarmsListener() {
         @Override
-        public void onAlarmsChanged(List<Alarm> alarms) {
+        public void invoke(List<Alarm> alarms) {
             _alarms.setValue(alarms);
         }
     };
@@ -56,93 +69,83 @@ public class AlarmViewModel extends ViewModel {
     protected void onCleared() {
         super.onCleared();
         alarmsService.removeListener(alarmsListener);
+        executorService.shutdown();
     }
 
-    public void updateEnabledAlarm(Alarm alarm, int enabled, Context context, int idx) {
-        viewModelScope.launch(() -> {
-            if (alarm.enabled == 0) { // turn on
-                Settings settings = await withContext(Dispatchers.IO, () -> alarmsService.getSettings());
+    public void updateEnabledAlarm(Alarm alarm, int enabled, Context context) {
+        executorService.execute(() -> {
+            if (alarm.getEnabled() == 0) { // turn on
+                Settings settings = alarmsService.getSettings(); // Call this synchronously
                 new MyAlarmManager(context, alarm, settings).startProcess();
             } else {
                 new MyAlarmManager(context, alarm, new Settings(0)).endProcess();
             }
-            await withContext(Dispatchers.IO, () -> alarmsService.updateEnabled(alarm.id, enabled));
+            alarmsService.updateEnabled(alarm.getId(), enabled);
         });
     }
 
-    public boolean addAlarm(Alarm alarm, Context context) {
-        return viewModelScope.launch(() -> {
-            if (await withContext(Dispatchers.IO, () -> alarmsService.addAlarm(alarm))) {
-                Settings settings = await withContext(Dispatchers.IO, () -> alarmsService.getSettings());
+    public void addAlarm(Alarm alarm, Context context, AlarmCallback callback) {
+        executorService.execute(() -> {
+            boolean result = alarmsService.addAlarm(alarm);
+            if(result) {
+                Settings settings = alarmsService.getSettings(); // Call this synchronously
                 new MyAlarmManager(context, alarm, settings).startProcess();
-                return true;
-            } else {
-                return false;
             }
+            callback.onResult(result);
         });
     }
 
-    public boolean updateAlarm(Alarm alarmNew, Context context) {
-        return viewModelScope.launch(() -> {
-            if (await withContext(Dispatchers.IO, () -> alarmsService.updateAlarm(alarmNew))) {
-                if (alarmNew.enabled == 1) {
-                    Settings settings = await withContext(Dispatchers.IO, () -> alarmsService.getSettings());
-                    new MyAlarmManager(context, alarmNew, settings).restartProcess();
-                }
-                return true;
-            } else {
-                return false;
+    public void updateAlarm(Alarm alarmNew, Context context, AlarmCallback callback) {
+        executorService.execute(() -> {
+            boolean result = alarmsService.updateAlarm(alarmNew);
+            if (result && alarmNew.getEnabled() == 1) {
+                Settings settings = alarmsService.getSettings(); // Call this synchronously
+                new MyAlarmManager(context, alarmNew, settings).restartProcess();
             }
+
+            // Возвращаем результат через обратный вызов
+            callback.onResult(result);
         });
     }
 
     public void deleteAlarms(List<Alarm> alarmsToDelete, Context context) {
-        viewModelScope.launch(() -> alarmsService.deleteAlarms(alarmsToDelete, context));
+        executorService.execute(() -> alarmsService.deleteAlarms(alarmsToDelete, context));
     }
 
     public void getAndNotify() {
-        viewModelScope.launch(() -> {
+        executorService.execute(() -> {
             alarmsService.getAlarms();
             alarmsService.notifyChanges();
         });
     }
 
-    public Pair<String, Integer> getPreferencesWallpaperAndInterval(Context context) {
-        SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-        String wallpaper = preferences.getString(PREF_WALLPAPER, "");
-        int interval = preferences.getInt(PREF_INTERVAL, 5);
-        return new Pair<>(wallpaper, interval);
-    }
-
-    public int getPreferencesTheme(Context context) {
-        SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-        return preferences.getInt(PREF_THEME, 0);
+    public void getPreferencesWallpaperAndInterval(Context context, PreferenceCallback callback) {
+        executorService.execute(() -> {
+            SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+            String wallpaper = preferences.getString(PREF_WALLPAPER, "");
+            int interval = preferences.getInt(PREF_INTERVAL, 5);
+            callback.onResult(new Pair<>(wallpaper, interval));
+        });
     }
 
     public void editPreferencesWallpaper(Context context, String wallpaper) {
-        viewModelScope.launch(() -> {
-            await withContext(Dispatchers.IO, () -> {
-                SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-                preferences.edit().putString(PREF_WALLPAPER, wallpaper).apply();
-            });
+        executorService.execute(() -> {
+            SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+            preferences.edit().putString(PREF_WALLPAPER, wallpaper).apply();
         });
     }
 
     public void editPreferencesInterval(Context context, int interval) {
-        viewModelScope.launch(() -> {
-            await withContext(Dispatchers.IO, () -> {
-                SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-                preferences.edit().putInt(PREF_INTERVAL, interval).apply();
-            });
+        executorService.execute(() -> {
+            SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+            preferences.edit().putInt(PREF_INTERVAL, interval).apply();
         });
     }
 
     public void editPreferencesTheme(Context context, int theme) {
-        viewModelScope.launch(() -> {
-            await withContext(Dispatchers.IO, () -> {
-                SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-                preferences.edit().putInt(PREF_THEME, theme).apply();
-            });
+        executorService.execute(() -> {
+            SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+            preferences.edit().putInt(PREF_THEME, theme).apply();
         });
     }
 
@@ -156,7 +159,7 @@ public class AlarmViewModel extends ViewModel {
         prefs.unregisterOnSharedPreferenceChangeListener(preferenceChangeListener);
     }
 
-    private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener = (sharedPreferences, key) -> {
+    private final SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener = (sharedPreferences, key) -> {
         if (key.equals(PREF_WALLPAPER)) {
             String tmp = sharedPreferences.getString(PREF_WALLPAPER, "");
             _wallpaper.postValue(tmp);
@@ -164,14 +167,14 @@ public class AlarmViewModel extends ViewModel {
     };
 
     public Settings getSettings() {
-        return viewModelScope.launch(() -> {
-            return await withContext(Dispatchers.IO, () -> alarmsService.getSettings());
-        });
+        return alarmsService.getSettings(); // Call this synchronously
     }
 
     public void updateSettings(Settings settings) {
-        viewModelScope.launch(() -> {
-            await withContext(Dispatchers.IO, () -> alarmsService.updateSettings(settings));
-        });
+        executorService.execute(() -> alarmsService.updateSettings(settings));
+    }
+
+    public interface PreferenceCallback {
+        void onResult(Pair<String, Integer> result);
     }
 }
