@@ -16,6 +16,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.alarm.databinding.FragmentSettingsBinding;
+import com.example.alarm.model.Settings;
+
+import java.util.Arrays;
+import java.util.List;
+
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
@@ -31,7 +36,7 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentSettingsBinding.inflate(inflater, container, false);
         alarmViewModel.registerPreferences(requireContext());
-        alarmViewModel.wallpaper.observe(getViewLifecycleOwner(), this::updateWallpapers);
+        alarmViewModel.getWallpaper().observe(getViewLifecycleOwner(), this::updateWallpapers);
         String[] prefs = alarmViewModel.getPreferencesWallpaperAndInterval(requireContext());
         String wallpaper = prefs[0];
 
@@ -50,25 +55,25 @@ public class SettingsFragment extends Fragment {
 
         lifecycleScope.launch(() -> {
             Settings settings = alarmViewModel.getSettings();
-            binding.melodyName.setText(settings.melody);
-            binding.repeatRadioGroup.setEnabled(settings.repetitions == 1);
-            binding.switchVibration.setChecked(settings.vibration == 1);
-            switch (settings.repetitions) {
+            binding.melodyName.setText(settings.getMelody());
+            binding.repeatRadioGroup.setEnabled(settings.getRepetitions() == 1);
+            binding.switchVibration.setChecked(settings.getVibration() == 1);
+            switch (settings.getRepetitions()) {
                 case 3: binding.repeats3.setChecked(true); break;
                 case 5: binding.repeats5.setChecked(true); break;
                 default: binding.repeatsInfinite.setChecked(true); break;
             }
-            switch (settings.interval) {
+            switch (settings.getInterval()) {
                 case 3: binding.interval3.setChecked(true); break;
                 case 5: binding.interval5.setChecked(true); break;
                 default: binding.interval10.setChecked(true); break;
             }
-            globalId = settings.id;
+            globalId = settings.getId();
         });
 
         binding.changeMelody.setOnClickListener(this::showSignalsPopupMenu);
         binding.playMelody.setOnClickListener(v -> lifecycleScope.launch(() -> {
-            String melody = alarmViewModel.getSettings().melody;
+            String melody = alarmViewModel.getSettings().getMelody();
             playMelody(getMelodyResource(melody));
         }));
 
@@ -114,16 +119,15 @@ public class SettingsFragment extends Fragment {
     }
 
     private Settings readSettings(long id) {
-        return new Settings(
-                id,
-                binding.melodyName.getText().toString(),
-                binding.switchVibration.isChecked() ? 1 : 0,
-                binding.interval3.isChecked() ? 3 :
-                        binding.interval5.isChecked() ? 5 : 10,
-                binding.repeats3.isChecked() ? 3 :
-                        binding.repeats5.isChecked() ? 5 : 100,
-                0 // todo
-        );
+        Settings settings = new Settings(id);
+        settings.setMelody(binding.melodyName.getText().toString());
+        settings.setVibration(binding.switchVibration.isChecked() ? 1 : 0);
+        settings.setInterval(binding.interval3.isChecked() ? 3 :
+                binding.interval5.isChecked() ? 5 : 10);
+        settings.setRepetitions(binding.repeats3.isChecked() ? 3 :
+                binding.repeats5.isChecked() ? 5 : 100);
+        settings.setDisableType(0); // todo
+        return settings;
     }
 
     private void updatePrefs(int interval) {

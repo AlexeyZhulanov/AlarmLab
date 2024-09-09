@@ -18,6 +18,7 @@ import com.example.alarm.model.Settings;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import dagger.hilt.android.lifecycle.HiltViewModel;
 
@@ -72,15 +73,17 @@ public class AlarmViewModel extends ViewModel {
         executorService.shutdown();
     }
 
-    public void updateEnabledAlarm(Alarm alarm, int enabled, Context context) {
-        executorService.execute(() -> {
+    public Future<Integer> updateEnabledAlarm(Alarm alarm, int enabled, Context context, int index) {
+        return executorService.submit(() -> {
             if (alarm.getEnabled() == 0) { // turn on
                 Settings settings = alarmsService.getSettings(); // Call this synchronously
                 new MyAlarmManager(context, alarm, settings).startProcess();
             } else {
                 new MyAlarmManager(context, alarm, new Settings(0)).endProcess();
             }
+
             alarmsService.updateEnabled(alarm.getId(), enabled);
+            return index;
         });
     }
 
@@ -172,9 +175,5 @@ public class AlarmViewModel extends ViewModel {
 
     public void updateSettings(Settings settings) {
         executorService.execute(() -> alarmsService.updateSettings(settings));
-    }
-
-    public interface PreferenceCallback {
-        void onResult(Pair<String, Integer> result);
     }
 }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.icu.util.Calendar;
 import android.icu.util.ULocale;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,50 +18,65 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.alarm.databinding.FragmentAlarmBinding;
 import com.example.alarm.model.Alarm;
 import dagger.hilt.android.AndroidEntryPoint;
-import kotlinx.coroutines.Dispatchers;
-import kotlinx.coroutines.Job;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @AndroidEntryPoint
 public class AlarmFragment extends Fragment {
 
     private AlarmsAdapter adapter;
     private FragmentAlarmBinding binding;
-    private Job updateJob;
+    private Future<?> updateJob;
+    private int interval = 0;
+    private String wallpaper = "";
     private Map<Long, Long> millisToAlarm = new HashMap<>();
     private final AlarmViewModel alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @SuppressLint("DiscouragedApi")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentAlarmBinding.inflate(inflater, container, false);
-        String[] prefs = alarmViewModel.getPreferencesWallpaperAndInterval(requireContext());
-        String wallpaper = prefs[0];
-        int interval = Integer.parseInt(prefs[1]);
+        alarmViewModel.getPreferencesWallpaperAndInterval(requireContext(), new PreferenceCallback() {
+            @Override
+            public void onResult(Pair<String, Integer> result) {
+                wallpaper = result.first;
+                interval = result.second;
+            }
+        });
 
-        if (!wallpaper.isEmpty()) {
+        if (!Objects.equals(wallpaper, "")) {
             int resId = requireContext().getResources().getIdentifier(wallpaper, "drawable", requireContext().getPackageName());
-            if (resId != 0)
+            if (resId != 0) {
                 binding.alarmLayout.setBackground(ContextCompat.getDrawable(requireContext(), resId));
+            }
         }
 
         adapter = new AlarmsAdapter(interval, new AlarmActionListener() {
             @Override
             public void onAlarmEnabled(Alarm alarm, int index) {
-                lifecycleScope.launch(() -> {
-                    int bool = 0;
-                    if (alarm.enabled == 0) {
-                        bool = 1;
-                        changeAlarmTime(alarm, false);
-                        binding.barTextView.setText(updateBar());
-                    } else {
-                        changeAlarmTime(alarm, true);
-                        binding.barTextView.setText(updateBar());
+                executorService.submit(() -> {
+                    int bool = (alarm.getEnabled() == 0) ? 1 : 0;
+                    changeAlarmTime(alarm, alarm.getEnabled() != 0);
+                    binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
+
+                    Future<Integer> future = alarmViewModel.updateEnabledAlarm(alarm, bool, requireContext(), index);
+
+                    try {
+                        int idx = future.get();
+                        adapter.notifyItemChanged(idx);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    int idx = async(Dispatchers.IO, () -> alarmViewModel.updateEnabledAlarm(alarm, bool, requireContext(), index));
-                    adapter.notifyItemChanged(idx);
                 });
             }
 
@@ -68,11 +84,12 @@ public class AlarmFragment extends Fragment {
             public void onAlarmChange(Alarm alarm) {
                 BottomSheetFragment fragment = new BottomSheetFragment(false, alarm, new BottomSheetListener() {
                     @Override
-                    public void onAddAlarm(Alarm alarm) {}
+                    public void onAddAlarm(Alarm alarm) {
+                    }
 
                     @Override
                     public void onChangeAlarm(Alarm alarmOld, Alarm alarmNew) {
-                        if (alarmNew.enabled == 1) {
+                        if (alarmNew.getEnabled() == 1) {
                             changeAlarmTime(alarmOld, true);
                             changeAlarmTime(alarmNew, false);
                             binding.barTextView.setText(updateBar());
@@ -96,7 +113,6 @@ public class AlarmFragment extends Fragment {
                             binding.floatingActionButtonAdd.setVisibility(View.VISIBLE);
                             alarmViewModel.getAndNotify();
                         } else {
-                            // Removing this callback
                             remove();
                             requireActivity().getOnBackPressedDispatcher().onBackPressed();
                         }
@@ -108,7 +124,7 @@ public class AlarmFragment extends Fragment {
                     if (!alarmsToDelete.isEmpty()) {
                         alarmViewModel.deleteAlarms(alarmsToDelete, getContext());
                         for (Alarm a : alarmsToDelete) {
-                            if (a.enabled == 1) changeAlarmTime(a, true);
+                            if (a.getEnabled() == 1) changeAlarmTime(a, true);
                         }
                         binding.barTextView.setText(updateBar());
                         binding.floatingActionButtonDelete.setVisibility(View.GONE);
@@ -124,11 +140,9 @@ public class AlarmFragment extends Fragment {
         binding.recyclerview.setAdapter(adapter);
         binding.recyclerview.addItemDecoration(new VerticalSpaceItemDecoration(40));
 
-        alarmViewModel.alarms.observe(getViewLifecycleOwner(), alarms -> {
-            adapter.alarms = alarms;
-        });
+        alarmViewModel.alarms.observe(getViewLifecycleOwner(), alarms -> adapter.setAlarms(alarms));
 
-        ((AppCompatActivity) requireActivity()).setSupportActionBar(binding.toolbar); // Adds a button
+        ((AppCompatActivity) requireActivity()).setSupportActionBar(binding.toolbar);
 
         binding.floatingActionButtonAdd.setOnClickListener(v -> {
             BottomSheetFragment fragment = new BottomSheetFragment(true, new Alarm(0), new BottomSheetListener() {
@@ -136,29 +150,38 @@ public class AlarmFragment extends Fragment {
                 public void onAddAlarm(Alarm alarm) {
                     long id = 0;
                     for (Alarm a : adapter.alarms) {
-                        if (a.timeHours == alarm.timeHours && a.timeMinutes == alarm.timeMinutes) {
-                            id = a.id;
+                        if (a.getTimeHours() == alarm.getTimeHours() && a.getTimeMinutes() == alarm.getTimeMinutes()) {
+                            id = a.getId();
                             break;
                         }
                     }
-                    Alarm alr = new Alarm(id, alarm.timeHours, alarm.timeMinutes, alarm.name, alarm.enabled);
+                    Alarm alr = new Alarm(id);
+                    alr.setTimeHours(alarm.getTimeHours());
+                    alr.setTimeMinutes(alarm.getTimeMinutes());
+                    alr.setName(alarm.getName());
+                    alr.setEnabled(alarm.getEnabled());
                     changeAlarmTime(alr, false);
                     binding.barTextView.setText(updateBar());
                 }
 
                 @Override
-                public void onChangeAlarm(Alarm alarmOld, Alarm alarmNew) {}
+                public void onChangeAlarm(Alarm alarmOld, Alarm alarmNew) {
+                }
             });
             fragment.show(getChildFragmentManager(), "AddTag");
         });
 
-        alarmViewModel.initCompleted.observe(getViewLifecycleOwner(), it -> {
+        alarmViewModel.getInitCompleted().observe(getViewLifecycleOwner(), it -> {
             if (it) {
-                updateJob = lifecycleScope.launch(() -> {
-                    millisToAlarm = fillAlarmsTime();
-                    while (isActive) {
-                        binding.barTextView.setText(updateBar());
-                        delay(30000);
+                updateJob = executorService.submit(() -> {
+                    try {
+                        millisToAlarm = fillAlarmsTime();
+                        while (!Thread.currentThread().isInterrupted()) {
+                            binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
+                            TimeUnit.SECONDS.sleep(30);
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                     }
                 });
             }
@@ -171,45 +194,45 @@ public class AlarmFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (updateJob != null) {
-            updateJob.cancel();
+            updateJob.cancel(true);
         }
     }
 
-    private suspend Map<Long, Long> fillAlarmsTime() {
-        return withContext(Dispatchers.Default, () -> {
-            Map<Long, Long> map = new HashMap<>();
-            Calendar calendar = Calendar.getInstance();
-            Calendar calendar2 = Calendar.getInstance(ULocale.ROOT);
-            for (Alarm alr : adapter.alarms) {
-                if (alr.enabled == 1) {
-                    calendar.set(Calendar.HOUR_OF_DAY, alr.timeHours);
-                    calendar.set(Calendar.MINUTE, alr.timeMinutes);
-                    calendar.set(Calendar.SECOND, 0);
-                    long longTime = (calendar2.getTimeInMillis() > calendar.getTimeInMillis())
-                            ? calendar.getTimeInMillis() + 86400000
-                            : calendar.getTimeInMillis();
-                    map.put(alr.id, longTime);
-                }
+    private Map<Long, Long> fillAlarmsTime() {
+        Map<Long, Long> map = new HashMap<>();
+        Calendar calendar = Calendar.getInstance();
+        Calendar calendar2 = Calendar.getInstance(ULocale.ROOT);
+
+        for (Alarm alr : adapter.alarms) {
+            if (alr.getEnabled() == 1) {
+                calendar.set(Calendar.HOUR_OF_DAY, alr.getTimeHours());
+                calendar.set(Calendar.MINUTE, alr.getTimeMinutes());
+                calendar.set(Calendar.SECOND, 0);
+                long longTime = (calendar2.getTimeInMillis() > calendar.getTimeInMillis())
+                        ? calendar.getTimeInMillis() + 86400000
+                        : calendar.getTimeInMillis();
+                map.put(alr.getId(), longTime);
             }
-            return map.entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue())
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, HashMap::new));
-        });
+        }
+
+        return map.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
     private void changeAlarmTime(Alarm alarm, boolean isDisable) {
         if (isDisable) {
-            millisToAlarm.remove(alarm.id);
+            millisToAlarm.remove(alarm.getId());
         } else {
             Calendar calendar = Calendar.getInstance();
             Calendar calendar2 = Calendar.getInstance(ULocale.ROOT);
-            calendar.set(Calendar.HOUR_OF_DAY, alarm.timeHours);
-            calendar.set(Calendar.MINUTE, alarm.timeMinutes);
+            calendar.set(Calendar.HOUR_OF_DAY, alarm.getTimeHours());
+            calendar.set(Calendar.MINUTE, alarm.getTimeMinutes());
             calendar.set(Calendar.SECOND, 0);
             long longTime = (calendar2.getTimeInMillis() > calendar.getTimeInMillis())
                     ? calendar.getTimeInMillis() + 86400000
                     : calendar.getTimeInMillis();
-            millisToAlarm.put(alarm.id, longTime);
+            millisToAlarm.put(alarm.getId(), longTime);
         }
         millisToAlarm = millisToAlarm.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
@@ -224,25 +247,23 @@ public class AlarmFragment extends Fragment {
             Calendar calendar = Calendar.getInstance(ULocale.ROOT);
             long longTime = millisToAlarm.entrySet().iterator().next().getValue();
             int minutes = (int) ((longTime - calendar.getTimeInMillis()) / 60000);
-            switch (minutes) {
-                case 0:
-                    txt.append("Звонок менее чем через 1 мин.");
-                    break;
-                case 1, 59 -> txt.append("Звонок через\n").append(minutes).append(" мин.");
-                default -> {
-                    int hours = minutes / 60;
-                    txt.append("Звонок через\n").append(hours).append(" ч. ").append(minutes % 60).append(" мин.");
-                }
+
+            if (minutes == 0) {
+                txt.append("Звонок менее чем через 1 мин.");
+            } else if (minutes < 60) {
+                txt.append("Звонок через\n").append(minutes).append(" мин.");
+            } else {
+                int hours = minutes / 60;
+                txt.append("Звонок через\n").append(hours).append(" ч. ").append(minutes % 60).append(" мин.");
             }
         }
         return txt.toString();
     }
 
-    @SuppressWarnings("Unused")
     public void fillAndUpdateBar() {
-        withContext(Dispatchers.Default, () -> {
+        executorService.submit(() -> {
             millisToAlarm = fillAlarmsTime();
-            binding.barTextView.setText(updateBar());
+            binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
         });
     }
 
@@ -250,7 +271,7 @@ public class AlarmFragment extends Fragment {
     public void onPause() {
         super.onPause();
         if (updateJob != null) {
-            updateJob.cancel();
+            updateJob.cancel(true); // Принудительно завершаем задачу
         }
     }
 }

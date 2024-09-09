@@ -12,20 +12,21 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.IntentCompat;
-import androidx.work.OneTimeWorkRequestBuilder;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
-import androidx.work.WorkData;
 
-import kotlinx.coroutines.CoroutineScope;
-import kotlinx.coroutines.Dispatchers;
-import kotlinx.coroutines.Job;
-import kotlinx.coroutines.launch;
+import com.example.alarm.model.Alarm;
+import com.example.alarm.model.AppVisibilityTracker;
+import com.example.alarm.model.MyAlarmManager;
+import com.example.alarm.model.Settings;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AlarmReceiver extends BroadcastReceiver {
 
@@ -33,8 +34,7 @@ public class AlarmReceiver extends BroadcastReceiver {
     private AudioManager audioManager;
     private AudioFocusRequest focusRequest;
     private int originalMusicVolume = 0;
-    private Job job = new Job();
-    private CoroutineScope uiScope = new CoroutineScope(Dispatchers.Main.plus(job));
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @SuppressLint("Wakelock")
     @Override
@@ -79,8 +79,14 @@ public class AlarmReceiver extends BroadcastReceiver {
         channel.setDescription("Alarm notification");
         notificationManager.createNotificationChannel(channel);
 
-        WorkData workData = new WorkData.Builder().putLong("alarmId", id).putInt("enabled", 0).build();
-        OneTimeWorkRequestBuilder<AlarmWorker> updateWorkRequest = new OneTimeWorkRequestBuilder<AlarmWorker>().setInputData(workData);
+        // Замена WorkData на Data.Builder
+        Data inputData = new Data.Builder()
+                .putLong("alarmId", id)
+                .putInt("enabled", 0)
+                .build();
+        OneTimeWorkRequest updateWorkRequest = new OneTimeWorkRequest.Builder(AlarmWorker.class)
+                .setInputData(inputData)
+                .build();
         WorkManager.getInstance(context).enqueue(updateWorkRequest);
 
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
@@ -96,7 +102,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         int audioFocusResult = audioManager.requestAudioFocus(focusRequest);
 
         if (audioFocusResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            OneTimeWorkRequestBuilder<VolumeAdjusterWorker> volumeAdjusterRequest = new OneTimeWorkRequestBuilder<VolumeAdjusterWorker>();
+            OneTimeWorkRequest volumeAdjusterRequest = new OneTimeWorkRequest.Builder(VolumeAdjusterWorker.class).build();
             WorkManager.getInstance(context).enqueue(volumeAdjusterRequest);
             selectMelody(settings, context);
             mediaPlayer.setLooping(true);
@@ -109,11 +115,11 @@ public class AlarmReceiver extends BroadcastReceiver {
             Log.d("AudioFocus", "Failed to gain audio focus");
         }
 
-        IntentFilter filter = new IntentFilter(LOCAL_BROADCAST_KEY2);
+        IntentFilter filter = new IntentFilter(AlarmReceiver.LOCAL_BROADCAST_KEY2);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             context.getApplicationContext().registerReceiver(turnOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         }
-        Intent turnOffIntent = new Intent(LOCAL_BROADCAST_KEY2);
+        Intent turnOffIntent = new Intent(AlarmReceiver.LOCAL_BROADCAST_KEY2);
         turnOffIntent.putExtra("alarmId", id);
         turnOffIntent.putExtra("notificationId", 2);
         PendingIntent turnOffPendingIntent = PendingIntent.getBroadcast(context, 0, turnOffIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -135,54 +141,56 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     private void selectMelody(Settings settings, Context context) {
         int melodyResource = R.raw.default_signal1; // Default melody
-        String melody = settings != null ? settings.melody : null;
+        String melody = settings != null ? settings.getMelody() : null;
 
-        switch (melody) {
-            case "melody1":
-                melodyResource = R.raw.default_signal1;
-                break;
-            case "melody2":
-                melodyResource = R.raw.default_signal2;
-                break;
-            case "melody3":
-                melodyResource = R.raw.default_signal3;
-                break;
-            case "melody4":
-                melodyResource = R.raw.default_signal4;
-                break;
-            case "melody5":
-                melodyResource = R.raw.default_signal5;
-                break;
-            case "melody6":
-                melodyResource = R.raw.signal;
-                break;
-            case "melody7":
-                melodyResource = R.raw.banjo_signal;
-                break;
-            case "melody8":
-                melodyResource = R.raw.morning_signal;
-                break;
-            case "melody9":
-                melodyResource = R.raw.simple_signal;
-                break;
-            case "melody10":
-                melodyResource = R.raw.fitness_signal;
-                break;
-            case "melody11":
-                melodyResource = R.raw.medieval_signal;
-                break;
-            case "melody12":
-                melodyResource = R.raw.introduction_signal;
-                break;
-            default:
-                melodyResource = R.raw.default_signal1;
-                break;
+        if (melody != null) {
+            switch (melody) {
+                case "melody1":
+                    melodyResource = R.raw.default_signal1;
+                    break;
+                case "melody2":
+                    melodyResource = R.raw.default_signal2;
+                    break;
+                case "melody3":
+                    melodyResource = R.raw.default_signal3;
+                    break;
+                case "melody4":
+                    melodyResource = R.raw.default_signal4;
+                    break;
+                case "melody5":
+                    melodyResource = R.raw.default_signal5;
+                    break;
+                case "melody6":
+                    melodyResource = R.raw.signal;
+                    break;
+                case "melody7":
+                    melodyResource = R.raw.banjo_signal;
+                    break;
+                case "melody8":
+                    melodyResource = R.raw.morning_signal;
+                    break;
+                case "melody9":
+                    melodyResource = R.raw.simple_signal;
+                    break;
+                case "melody10":
+                    melodyResource = R.raw.fitness_signal;
+                    break;
+                case "melody11":
+                    melodyResource = R.raw.medieval_signal;
+                    break;
+                case "melody12":
+                    melodyResource = R.raw.introduction_signal;
+                    break;
+                default:
+                    melodyResource = R.raw.default_signal1;
+                    break;
+            }
         }
 
         mediaPlayer = MediaPlayer.create(context, melodyResource);
     }
 
-    private BroadcastReceiver turnOffReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver turnOffReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             mediaPlayer.stop();
@@ -190,7 +198,8 @@ public class AlarmReceiver extends BroadcastReceiver {
             audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalMusicVolume, 0);
             audioManager.abandonAudioFocusRequest(focusRequest);
 
-            uiScope.launch(() -> {
+            // Замена корутин на ExecutorService
+            executorService.execute(() -> {
                 long alarmId = intent.getLongExtra("alarmId", 0);
                 int notificationId = intent.getIntExtra("notificationId", -1);
                 Alarm alarmPlug = new Alarm(alarmId);
@@ -200,6 +209,6 @@ public class AlarmReceiver extends BroadcastReceiver {
             });
         }
     };
-}
 
-const String LOCAL_BROADCAST_KEY2 = "alarm_update";
+    public static final String LOCAL_BROADCAST_KEY2 = "alarm_update";
+}

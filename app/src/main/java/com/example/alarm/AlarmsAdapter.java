@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.alarm.databinding.ItemAlarmBinding;
+import com.example.alarm.model.Alarm;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,8 +22,8 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.AlarmsView
     private final int interval;
     private final AlarmActionListener actionListener;
 
-    private List<Alarm> alarms = new ArrayList<>();
-    private boolean canLongClick = true;
+    List<Alarm> alarms = new ArrayList<>();
+    boolean canLongClick = true;
     private final Set<Integer> checkedPositions = new HashSet<>();
     private int index = 0;
 
