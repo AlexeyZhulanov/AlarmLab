@@ -131,6 +131,11 @@ public class AlarmViewModel extends ViewModel {
         });
     }
 
+    public int getPreferencesTheme(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+        return preferences.getInt(PREF_THEME, 0);
+    }
+
     public void editPreferencesWallpaper(Context context, String wallpaper) {
         executorService.execute(() -> {
             SharedPreferences preferences = context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
