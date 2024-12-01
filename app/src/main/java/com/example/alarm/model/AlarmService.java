@@ -115,9 +115,6 @@ public class AlarmService implements AlarmRepository {
     public void deleteAlarms(List<Alarm> list, Context context) {
         runTask(() -> {
             for (Alarm l : list) {
-                if (l.getEnabled() == 1) {
-                    new MyAlarmManager(context, l, new Settings(0)).endProcess();
-                }
                 alarmDao.deleteAlarm(AlarmDbEntity.fromUserInput(l));
             }
             alarms = getAlarms();
@@ -131,7 +128,6 @@ public class AlarmService implements AlarmRepository {
             for (Alarm alarm : alarms) {
                 if (alarm.getEnabled() == 1) {
                     alarmDao.updateEnabled(new AlarmUpdateEnabledTuple(alarm.getId(), 0));
-                    new MyAlarmManager(context, alarm, new Settings(0)).endProcess();
                 }
             }
             alarms = getAlarms();

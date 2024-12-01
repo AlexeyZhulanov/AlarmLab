@@ -50,10 +50,4 @@ public class Alarm {
     public void setEnabled(int enabled) {
         this.enabled = enabled;
     }
-
-    @Override
-    public String toString() {
-        return "id: " + id + ", hours:" + timeHours + ", minutes:" + timeMinutes +
-                ", name:" + name + ", enabled:" + enabled;
-    }
 }

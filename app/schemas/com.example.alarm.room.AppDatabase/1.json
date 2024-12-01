@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "c720f8197626d2428554a7e6c6790801",
+    "identityHash": "18c83f8ca8cba8ba2e499100a904bd46",
     "entities": [
       {
         "tableName": "alarms",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `time_hours` INTEGER NOT NULL COLLATE NOCASE, `time_minutes` INTEGER NOT NULL COLLATE NOCASE, `name` TEXT NOT NULL, `enabled` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `time_hours` INTEGER NOT NULL COLLATE NOCASE, `time_minutes` INTEGER NOT NULL COLLATE NOCASE, `name` TEXT, `enabled` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -30,7 +30,7 @@
             "fieldPath": "name",
             "columnName": "name",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "enabled",
@@ -61,7 +61,7 @@
       },
       {
         "tableName": "settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `melody` TEXT NOT NULL, `vibration` INTEGER NOT NULL, `interval` INTEGER NOT NULL, `repetitions` INTEGER NOT NULL, `disable_type` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `melody` TEXT, `vibration` INTEGER NOT NULL, `interval` INTEGER NOT NULL, `repetitions` INTEGER NOT NULL, `disable_type` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -73,7 +73,7 @@
             "fieldPath": "melody",
             "columnName": "melody",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "vibration",
@@ -123,7 +123,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c720f8197626d2428554a7e6c6790801')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '18c83f8ca8cba8ba2e499100a904bd46')"
     ]
   }
 }

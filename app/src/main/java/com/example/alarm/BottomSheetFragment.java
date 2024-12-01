@@ -22,12 +22,13 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class BottomSheetFragment extends BottomSheetDialogFragment {
     private final boolean isAdd;
     private final Alarm oldAlarm;
+    private final AlarmViewModel alarmViewModel;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final BottomSheetListener bottomSheetListener;
     private FragmentBottomsheetBinding binding;
-    private final AlarmViewModel alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
 
-    public BottomSheetFragment(boolean isAdd, Alarm oldAlarm, BottomSheetListener bottomSheetListener) {
+    public BottomSheetFragment(AlarmViewModel alarmViewModel, boolean isAdd, Alarm oldAlarm, BottomSheetListener bottomSheetListener) {
+        this.alarmViewModel = alarmViewModel;
         this.isAdd = isAdd;
         this.oldAlarm = oldAlarm;
         this.bottomSheetListener = bottomSheetListener;
@@ -74,16 +75,13 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         alarm.setEnabled(1);
 
         executorService.execute(() -> {
-            alarmViewModel.addAlarm(alarm, requireContext(), new AlarmCallback() {
-                @Override
-                public void onResult(boolean result) {
-                    if(result) {
-                        bottomSheetListener.onAddAlarm(alarm);
-                    } else {
-                        Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
-                    }
-                    dismiss();
+            alarmViewModel.addAlarm(alarm, result -> {
+                if(result) {
+                    bottomSheetListener.onAddAlarm(alarm);
+                } else {
+                    Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
                 }
+                dismiss();
             });
         });
     }
@@ -96,16 +94,13 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         alarmNew.setEnabled(oldAlarm.getEnabled());
 
         executorService.execute(() -> {
-            alarmViewModel.updateAlarm(alarmNew, requireContext(), new AlarmCallback() {
-                @Override
-                public void onResult(boolean result) {
-                    if(result) {
-                        bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew);
-                    } else {
-                        Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
-                    }
-                    dismiss();
+            alarmViewModel.updateAlarm(alarmNew, result -> {
+                if(result) {
+                    bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew);
+                } else {
+                    Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
                 }
+                dismiss();
             });
         });
     }

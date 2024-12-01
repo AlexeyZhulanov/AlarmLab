@@ -34,12 +34,13 @@ public class SettingsFragment extends Fragment {
     private FragmentSettingsBinding binding;
     private long globalId;
     private MediaPlayer mediaPlayer;
-    private final AlarmViewModel alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
+    private AlarmViewModel alarmViewModel;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @SuppressLint("DiscouragedApi")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
         binding = FragmentSettingsBinding.inflate(inflater, container, false);
         alarmViewModel.registerPreferences(requireContext());
 
@@ -139,21 +140,19 @@ public class SettingsFragment extends Fragment {
     }
 
     private String getMelodyName(int itemId) {
-        switch (itemId) {
-            case R.id.melody1: return getString(R.string.melody1);
-            case R.id.melody2: return getString(R.string.melody2);
-            case R.id.melody3: return getString(R.string.melody3);
-            case R.id.melody4: return getString(R.string.melody4);
-            case R.id.melody5: return getString(R.string.melody5);
-            case R.id.melody6: return getString(R.string.melody6);
-            case R.id.melody7: return getString(R.string.melody7);
-            case R.id.melody8: return getString(R.string.melody8);
-            case R.id.melody9: return getString(R.string.melody9);
-            case R.id.melody10: return getString(R.string.melody10);
-            case R.id.melody11: return getString(R.string.melody11);
-            case R.id.melody12: return getString(R.string.melody12);
-            default: return null;
-        }
+        if (itemId == R.id.melody1) return getString(R.string.melody1);
+        else if (itemId == R.id.melody2) return getString(R.string.melody2);
+        else if (itemId == R.id.melody3) return getString(R.string.melody3);
+        else if (itemId == R.id.melody4) return getString(R.string.melody4);
+        else if (itemId == R.id.melody5) return getString(R.string.melody5);
+        else if (itemId == R.id.melody6) return getString(R.string.melody6);
+        else if (itemId == R.id.melody7) return getString(R.string.melody7);
+        else if (itemId == R.id.melody8) return getString(R.string.melody8);
+        else if (itemId == R.id.melody9) return getString(R.string.melody9);
+        else if (itemId == R.id.melody10) return getString(R.string.melody10);
+        else if (itemId == R.id.melody11) return getString(R.string.melody11);
+        else if (itemId == R.id.melody12) return getString(R.string.melody12);
+        else return null;
     }
 
     private int getMelodyResource(String melody) {
@@ -174,49 +173,29 @@ public class SettingsFragment extends Fragment {
         }
     }
 
-    private void showWallpapersPopupMenu(View view) {
-        PopupMenu popupMenu = new PopupMenu(requireContext(), view);
-        popupMenu.getMenuInflater().inflate(R.menu.wallpaper_menu, popupMenu.getMenu()); // Replace with your wallpaper menu resource
-        popupMenu.setOnMenuItemClickListener(menuItem -> {
-            String selectedWallpaper = getWallpaper(menuItem.getItemId());
-            if (selectedWallpaper != null) {
-                alarmViewModel.editPreferencesWallpaper(requireContext(), selectedWallpaper);
-                return true;
-            }
-            return false;
-        });
-        popupMenu.show();
-    }
-
-    private void showColorThemePopupMenu(View view) {
-        PopupMenu popupMenu = new PopupMenu(requireContext(), view);
-        popupMenu.getMenuInflater().inflate(R.menu.color_theme_menu, popupMenu.getMenu()); // Replace with your color theme menu resource
-        popupMenu.setOnMenuItemClickListener(menuItem -> {
-            int themeNumber = getColorThemeNumber(menuItem.getItemId());
-            if (themeNumber != -1) {
-                alarmViewModel.editPreferencesTheme(requireContext(), themeNumber);
-                requireActivity().recreate();
-                return true;
-            }
-            return false;
-        });
-        popupMenu.show();
-    }
-
-    private void showPopupMenu(View view, ViewGroup container, List<MenuItemData> menuItems, OnItemClickListener<MenuItemData> onItemClick) {
-        LayoutInflater inflater = getLayoutInflater();
+    private void showWallpapersPopupMenu(View view, ViewGroup container) {
+        // Inflate the custom layout for the popup
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
         View popupView = inflater.inflate(R.layout.popup_menu_wallpaper_layout, container, false);
-        PopupWindow popupWindow = new PopupWindow(popupView, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
+
+        // Create the PopupWindow
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                true // Focusable
+        );
+
+        // Show the popup window at a specific location
         popupWindow.showAtLocation(requireView(), Gravity.CENTER, 0, 0);
+
+        // Set up the RecyclerView
         RecyclerView recyclerView = popupView.findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        recyclerView.setAdapter(new PopupMenuWallpaperAdapter(menuItems, onItemClick::onClick));
-        popupWindow.showAsDropDown(view);
-    }
 
-    private List<MenuItemData> getWallpaperMenuItems() {
-        return Arrays.asList(
-                new MenuItemData("Classic", R.drawable.whitequad),
+        // Define the menu items
+        List<MenuItemData> menuItems = Arrays.asList(
+                new MenuItemData(getString(R.string.classic), R.drawable.whitequad),
                 new MenuItemData("1.", R.drawable.wallpaper1),
                 new MenuItemData("2.", R.drawable.wallpaper2),
                 new MenuItemData("3.", R.drawable.wallpaper3),
@@ -228,10 +207,75 @@ public class SettingsFragment extends Fragment {
                 new MenuItemData("9.", R.drawable.wallpaper9),
                 new MenuItemData("10.", R.drawable.wallpaper10)
         );
+
+        // Create and set the adapter
+        PopupMenuWallpaperAdapter adapter = new PopupMenuWallpaperAdapter(menuItems, menuItem -> {
+            String selectedWallpaper = "";
+            switch (menuItem.title) {
+                case "1.":
+                    selectedWallpaper = getString(R.string.wallpaper1);
+                    break;
+                case "2.":
+                    selectedWallpaper = getString(R.string.wallpaper2);
+                    break;
+                case "3.":
+                    selectedWallpaper = getString(R.string.wallpaper3);
+                    break;
+                case "4.":
+                    selectedWallpaper = getString(R.string.wallpaper4);
+                    break;
+                case "5.":
+                    selectedWallpaper = getString(R.string.wallpaper5);
+                    break;
+                case "6.":
+                    selectedWallpaper = getString(R.string.wallpaper6);
+                    break;
+                case "7.":
+                    selectedWallpaper = getString(R.string.wallpaper7);
+                    break;
+                case "8.":
+                    selectedWallpaper = getString(R.string.wallpaper8);
+                    break;
+                case "9.":
+                    selectedWallpaper = getString(R.string.wallpaper9);
+                    break;
+                case "10.":
+                    selectedWallpaper = getString(R.string.wallpaper10);
+                    break;
+                case "Classic":
+                    selectedWallpaper = ""; // Default case
+                    break;
+            }
+            // Save the selected wallpaper
+            alarmViewModel.editPreferencesWallpaper(requireContext(), selectedWallpaper);
+            // Dismiss the popup
+            popupWindow.dismiss();
+        });
+
+        recyclerView.setAdapter(adapter);
+
+        // Show the popup below the clicked view
+        popupWindow.showAsDropDown(view);
     }
 
-    private List<ColorThemeMenuItem> getColorThemeMenuItems() {
-        return Arrays.asList(
+
+    private void showColorThemePopupMenu(View view, ViewGroup container) {
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View popupView = inflater.inflate(R.layout.popup_menu_wallpaper_layout, container, false);
+
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                true
+        );
+
+        popupWindow.showAtLocation(requireView(), Gravity.CENTER, 0, 0);
+
+        RecyclerView recyclerView = popupView.findViewById(R.id.recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+
+        List<ColorThemeMenuItem> menuItems = Arrays.asList(
                 new ColorThemeMenuItem(R.color.colorPrimary, R.color.colorAccent, 0),
                 new ColorThemeMenuItem(R.color.color1_main, R.color.color1_secondary, 1),
                 new ColorThemeMenuItem(R.color.color2_main, R.color.color2_secondary, 2),
@@ -242,7 +286,18 @@ public class SettingsFragment extends Fragment {
                 new ColorThemeMenuItem(R.color.color7_main, R.color.color7_secondary, 7),
                 new ColorThemeMenuItem(R.color.color8_main, R.color.color8_secondary, 8)
         );
+
+        ColorThemeMenuAdapter adapter = new ColorThemeMenuAdapter(menuItems, menuItem -> {
+            alarmViewModel.editPreferencesTheme(requireContext(), menuItem.getThemeNumber());
+            requireActivity().recreate();
+            popupWindow.dismiss();
+        });
+
+        recyclerView.setAdapter(adapter);
+
+        popupWindow.showAsDropDown(view);
     }
+
 
     private void onWallpaperItemSelected(MenuItemData menuItem) {
         String temp = menuItem.title.equals("Classic") ? "" : "wallpaper" + menuItem.title.charAt(0);

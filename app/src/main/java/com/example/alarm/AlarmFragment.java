@@ -39,12 +39,13 @@ public class AlarmFragment extends Fragment {
     private int interval = 0;
     private String wallpaper = "";
     private Map<Long, Long> millisToAlarm = new HashMap<>();
-    private final AlarmViewModel alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
+    private AlarmViewModel alarmViewModel;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @SuppressLint("DiscouragedApi")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
         binding = FragmentAlarmBinding.inflate(inflater, container, false);
         alarmViewModel.getPreferencesWallpaperAndInterval(requireContext(), new PreferenceCallback() {
             @Override
@@ -69,7 +70,7 @@ public class AlarmFragment extends Fragment {
                     changeAlarmTime(alarm, alarm.getEnabled() != 0);
                     binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
 
-                    Future<Integer> future = alarmViewModel.updateEnabledAlarm(alarm, bool, requireContext(), index);
+                    Future<Integer> future = alarmViewModel.updateEnabledAlarm(alarm, bool, index);
 
                     try {
                         int idx = future.get();
@@ -82,7 +83,7 @@ public class AlarmFragment extends Fragment {
 
             @Override
             public void onAlarmChange(Alarm alarm) {
-                BottomSheetFragment fragment = new BottomSheetFragment(false, alarm, new BottomSheetListener() {
+                BottomSheetFragment fragment = new BottomSheetFragment(alarmViewModel,false, alarm, new BottomSheetListener() {
                     @Override
                     public void onAddAlarm(Alarm alarm) {
                     }
@@ -145,7 +146,7 @@ public class AlarmFragment extends Fragment {
         ((AppCompatActivity) requireActivity()).setSupportActionBar(binding.toolbar);
 
         binding.floatingActionButtonAdd.setOnClickListener(v -> {
-            BottomSheetFragment fragment = new BottomSheetFragment(true, new Alarm(0), new BottomSheetListener() {
+            BottomSheetFragment fragment = new BottomSheetFragment(alarmViewModel,true, new Alarm(0), new BottomSheetListener() {
                 @Override
                 public void onAddAlarm(Alarm alarm) {
                     long id = 0;

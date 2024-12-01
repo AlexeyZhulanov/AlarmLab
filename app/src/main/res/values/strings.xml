@@ -45,4 +45,14 @@
     <string name="off_all_alarms">Выключить все будильники</string>
     <string name="volume_off">volume_off</string>
     <string name="error_is_exist">Ошибка: Такой элемент уже существует</string>
+    <string name="wallpaper1">wallpaper1</string>
+    <string name="wallpaper2">wallpaper2</string>
+    <string name="wallpaper3">wallpaper3</string>
+    <string name="wallpaper4">wallpaper4</string>
+    <string name="wallpaper5">wallpaper5</string>
+    <string name="wallpaper6">wallpaper6</string>
+    <string name="wallpaper7">wallpaper7</string>
+    <string name="wallpaper8">wallpaper8</string>
+    <string name="wallpaper9">wallpaper9</string>
+    <string name="wallpaper10">wallpaper10</string>
 </resources>

@@ -66,31 +66,27 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.AlarmsView
     @Override
     public void onClick(View v) {
         Alarm alarm = (Alarm) v.getTag();
-        switch (v.getId()) {
-            case R.id.switch1:
-                if (canLongClick) {
-                    for (int i = 0; i < alarms.size(); i++) {
-                        if (alarms.get(i).equals(alarm)) {
-                            index = i;
-                            break;
-                        }
+        if(v.getId() == R.id.switch1) {
+            if (canLongClick) {
+                for (int i = 0; i < alarms.size(); i++) {
+                    if (alarms.get(i).equals(alarm)) {
+                        index = i;
+                        break;
                     }
-                    actionListener.onAlarmEnabled(alarm, index);
                 }
-                break;
-            case R.id.checkBox:
-                if (!canLongClick) {
-                    savePosition(alarm);
-                }
-                break;
-            default:
-                if (canLongClick) {
-                    actionListener.onAlarmChange(alarm);
-                } else {
-                    savePosition(alarm);
-                    notifyDataSetChanged();
-                }
-                break;
+                actionListener.onAlarmEnabled(alarm, index);
+            }
+        } else if (v.getId() == R.id.checkBox) {
+            if (!canLongClick) {
+                savePosition(alarm);
+            }
+        } else {
+            if (canLongClick) {
+                actionListener.onAlarmChange(alarm);
+            } else {
+                savePosition(alarm);
+                notifyDataSetChanged();
+            }
         }
     }
 

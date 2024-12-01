@@ -17,10 +17,10 @@ public class AlarmDbEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
-    @ColumnInfo(name = "time_hours", collate = ColumnInfo.NOCASE)
+    @ColumnInfo(name = "time_hours")
     public int timeHours;
 
-    @ColumnInfo(name = "time_minutes", collate = ColumnInfo.NOCASE)
+    @ColumnInfo(name = "time_minutes")
     public int timeMinutes;
 
     public String name;

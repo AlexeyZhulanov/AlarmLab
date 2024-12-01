@@ -7,12 +7,10 @@ import android.util.Pair;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import androidx.room.Update;
 
 import com.example.alarm.model.Alarm;
 import com.example.alarm.model.AlarmService;
 import com.example.alarm.model.AlarmsListener;
-import com.example.alarm.model.MyAlarmManager;
 import com.example.alarm.model.Settings;
 
 import java.util.List;
@@ -73,39 +71,23 @@ public class AlarmViewModel extends ViewModel {
         executorService.shutdown();
     }
 
-    public Future<Integer> updateEnabledAlarm(Alarm alarm, int enabled, Context context, int index) {
+    public Future<Integer> updateEnabledAlarm(Alarm alarm, int enabled, int index) {
         return executorService.submit(() -> {
-            if (alarm.getEnabled() == 0) { // turn on
-                Settings settings = alarmsService.getSettings(); // Call this synchronously
-                new MyAlarmManager(context, alarm, settings).startProcess();
-            } else {
-                new MyAlarmManager(context, alarm, new Settings(0)).endProcess();
-            }
-
             alarmsService.updateEnabled(alarm.getId(), enabled);
             return index;
         });
     }
 
-    public void addAlarm(Alarm alarm, Context context, AlarmCallback callback) {
+    public void addAlarm(Alarm alarm, AlarmCallback callback) {
         executorService.execute(() -> {
             boolean result = alarmsService.addAlarm(alarm);
-            if(result) {
-                Settings settings = alarmsService.getSettings(); // Call this synchronously
-                new MyAlarmManager(context, alarm, settings).startProcess();
-            }
             callback.onResult(result);
         });
     }
 
-    public void updateAlarm(Alarm alarmNew, Context context, AlarmCallback callback) {
+    public void updateAlarm(Alarm alarmNew, AlarmCallback callback) {
         executorService.execute(() -> {
             boolean result = alarmsService.updateAlarm(alarmNew);
-            if (result && alarmNew.getEnabled() == 1) {
-                Settings settings = alarmsService.getSettings(); // Call this synchronously
-                new MyAlarmManager(context, alarmNew, settings).restartProcess();
-            }
-
             // Возвращаем результат через обратный вызов
             callback.onResult(result);
         });
