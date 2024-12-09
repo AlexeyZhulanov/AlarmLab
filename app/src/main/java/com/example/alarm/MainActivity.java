@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -115,16 +116,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case 1000037:
+            case 2131231129:
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragmentContainer, new SettingsFragment())
                         .addToBackStack("settings")
                         .commit();
                 return true;
-            case 1000088:
+            case 2131231112:
                 uiExecutor.execute(() -> {
-                    alarmsService.offAlarms(getApplicationContext());
+                    alarmsService.offAlarms();
                     ((AlarmFragment) getSupportFragmentManager().findFragmentByTag("ALARM_FRAGMENT_TAG")).fillAndUpdateBar();
                 });
                 return true;

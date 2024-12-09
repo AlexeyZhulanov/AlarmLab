@@ -66,18 +66,15 @@ public class AlarmFragment extends Fragment {
             @Override
             public void onAlarmEnabled(Alarm alarm, int index) {
                 executorService.submit(() -> {
-                    int bool = (alarm.getEnabled() == 0) ? 1 : 0;
-                    changeAlarmTime(alarm, alarm.getEnabled() != 0);
+                    Boolean bool = !alarm.getEnabled();
+                    changeAlarmTime(alarm, !alarm.getEnabled());
                     binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
 
-                    Future<Integer> future = alarmViewModel.updateEnabledAlarm(alarm, bool, index);
-
-                    try {
-                        int idx = future.get();
-                        adapter.notifyItemChanged(idx);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    alarmViewModel.updateEnabledAlarm(alarm, bool, result -> {
+                        if(result) {
+                            adapter.notifyItemChanged(index);
+                        }
+                    });
                 });
             }
 
@@ -90,7 +87,7 @@ public class AlarmFragment extends Fragment {
 
                     @Override
                     public void onChangeAlarm(Alarm alarmOld, Alarm alarmNew) {
-                        if (alarmNew.getEnabled() == 1) {
+                        if (alarmNew.getEnabled()) {
                             changeAlarmTime(alarmOld, true);
                             changeAlarmTime(alarmNew, false);
                             binding.barTextView.setText(updateBar());
@@ -125,7 +122,7 @@ public class AlarmFragment extends Fragment {
                     if (!alarmsToDelete.isEmpty()) {
                         alarmViewModel.deleteAlarms(alarmsToDelete, getContext());
                         for (Alarm a : alarmsToDelete) {
-                            if (a.getEnabled() == 1) changeAlarmTime(a, true);
+                            if (a.getEnabled()) changeAlarmTime(a, true);
                         }
                         binding.barTextView.setText(updateBar());
                         binding.floatingActionButtonDelete.setVisibility(View.GONE);
@@ -205,7 +202,7 @@ public class AlarmFragment extends Fragment {
         Calendar calendar2 = Calendar.getInstance(ULocale.ROOT);
 
         for (Alarm alr : adapter.alarms) {
-            if (alr.getEnabled() == 1) {
+            if (alr.getEnabled()) {
                 calendar.set(Calendar.HOUR_OF_DAY, alr.getTimeHours());
                 calendar.set(Calendar.MINUTE, alr.getTimeMinutes());
                 calendar.set(Calendar.SECOND, 0);

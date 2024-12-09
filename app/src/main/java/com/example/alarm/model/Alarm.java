@@ -8,7 +8,7 @@ public class Alarm {
     private int timeHours = 7;
     private int timeMinutes = 0;
     private String name = "default";
-    private int enabled = 0;
+    private boolean enabled = false;
 
     @Inject
     public Alarm(long id) {
@@ -43,11 +43,11 @@ public class Alarm {
         this.name = name;
     }
 
-    public int getEnabled() {
+    public Boolean getEnabled() {
         return enabled;
     }
 
-    public void setEnabled(int enabled) {
+    public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
 }

@@ -1,6 +1,6 @@
 package com.example.alarm.room;
 
-import androidx.room.ColumnInfo;
+import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.Index;
 import androidx.room.PrimaryKey;
@@ -17,21 +17,17 @@ public class SettingsDbEntity {
     @PrimaryKey(autoGenerate = true)
     public long id;
 
-    public String melody;
-    public int vibration;
+    @NonNull public String melody;
+    @NonNull public Boolean vibration;
     public int interval;
     public int repetitions;
 
-    @ColumnInfo(name = "disable_type")
-    public int disableType;
-
-    public SettingsDbEntity(long id, String melody, int vibration, int interval, int repetitions, int disableType) {
+    public SettingsDbEntity(long id, @NonNull String melody, @NonNull Boolean vibration, int interval, int repetitions) {
         this.id = id;
         this.melody = melody;
         this.vibration = vibration;
         this.interval = interval;
         this.repetitions = repetitions;
-        this.disableType = disableType;
     }
 
     public Settings toSettings() {
@@ -40,11 +36,10 @@ public class SettingsDbEntity {
         settings.setVibration(vibration);
         settings.setInterval(interval);
         settings.setRepetitions(repetitions);
-        settings.setDisableType(disableType);
         return settings;
     }
 
     public static SettingsDbEntity fromUserInput(Settings settings) {
-        return new SettingsDbEntity(settings.getId(), settings.getMelody(), settings.getVibration(), settings.getInterval(), settings.getRepetitions(), settings.getDisableType());
+        return new SettingsDbEntity(settings.getId(), settings.getMelody(), settings.getVibration(), settings.getInterval(), settings.getRepetitions());
     }
 }

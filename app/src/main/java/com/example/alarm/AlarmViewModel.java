@@ -48,7 +48,7 @@ public class AlarmViewModel extends ViewModel {
     private final AlarmsListener alarmsListener = new AlarmsListener() {
         @Override
         public void invoke(List<Alarm> alarms) {
-            _alarms.setValue(alarms);
+            _alarms.postValue(alarms);
         }
     };
 
@@ -71,10 +71,10 @@ public class AlarmViewModel extends ViewModel {
         executorService.shutdown();
     }
 
-    public Future<Integer> updateEnabledAlarm(Alarm alarm, int enabled, int index) {
-        return executorService.submit(() -> {
+    public void updateEnabledAlarm(Alarm alarm, Boolean enabled, AlarmCallback callback) {
+        executorService.submit(() -> {
             alarmsService.updateEnabled(alarm.getId(), enabled);
-            return index;
+            callback.onResult(true);
         });
     }
 

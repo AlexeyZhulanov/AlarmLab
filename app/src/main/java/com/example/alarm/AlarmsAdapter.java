@@ -136,7 +136,7 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.AlarmsView
         }
 
         holder.binding.intervalTextView.setText(Html.fromHtml(intervalText, Html.FROM_HTML_MODE_LEGACY));
-        holder.binding.switch1.setChecked(alarm.getEnabled() == 1);
+        holder.binding.switch1.setChecked(alarm.getEnabled());
 
         if (!canLongClick) {
             holder.binding.checkBox.setTag(alarm);

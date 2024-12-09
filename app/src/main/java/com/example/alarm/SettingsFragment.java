@@ -50,7 +50,7 @@ public class SettingsFragment extends Fragment {
             requireActivity().runOnUiThread(() -> {
                 binding.melodyName.setText(settings.getMelody());
                 binding.repeatRadioGroup.setEnabled(settings.getRepetitions() == 1);
-                binding.switchVibration.setChecked(settings.getVibration() == 1);
+                binding.switchVibration.setChecked(settings.getVibration());
                 switch (settings.getRepetitions()) {
                     case 3:
                         binding.repeats3.setChecked(true);
@@ -126,12 +126,11 @@ public class SettingsFragment extends Fragment {
     private Settings readSettings(long id) {
         Settings settings = new Settings(id);
         settings.setMelody(binding.melodyName.getText().toString());
-        settings.setVibration(binding.switchVibration.isChecked() ? 1 : 0);
+        settings.setVibration(binding.switchVibration.isChecked());
         settings.setInterval(binding.interval3.isChecked() ? 3 :
                 binding.interval5.isChecked() ? 5 : 10);
         settings.setRepetitions(binding.repeats3.isChecked() ? 3 :
                 binding.repeats5.isChecked() ? 5 : 100);
-        settings.setDisableType(0); // todo
         return settings;
     }
 

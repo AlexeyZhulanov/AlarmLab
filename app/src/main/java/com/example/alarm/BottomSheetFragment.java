@@ -1,6 +1,8 @@
 package com.example.alarm;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,16 +74,17 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         alarm.setTimeHours(binding.timePicker.getHour());
         alarm.setTimeMinutes(binding.timePicker.getMinute());
         alarm.setName(binding.signalName.getText().toString().isEmpty() ? "default" : binding.signalName.getText().toString());
-        alarm.setEnabled(1);
-
+        alarm.setEnabled(true);
         executorService.execute(() -> {
             alarmViewModel.addAlarm(alarm, result -> {
-                if(result) {
-                    bottomSheetListener.onAddAlarm(alarm);
-                } else {
-                    Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
-                }
-                dismiss();
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    if (result) {
+                        bottomSheetListener.onAddAlarm(alarm);
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
+                    }
+                    dismiss();
+                });
             });
         });
     }

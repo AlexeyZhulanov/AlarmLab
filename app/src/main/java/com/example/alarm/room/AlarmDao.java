@@ -12,7 +12,7 @@ import java.util.List;
 @Dao
 public interface AlarmDao {
     @Query("SELECT * FROM alarms ORDER BY time_hours ASC, time_minutes ASC")
-    List<AlarmsGetTuple> selectAlarms();
+    List<AlarmDbEntity> getAlarms();
 
     @Query("SELECT COUNT(*) FROM alarms WHERE time_hours = :hours AND time_minutes = :minutes")
     int countAlarmsWithTime(int hours, int minutes);
@@ -23,8 +23,8 @@ public interface AlarmDao {
     @Insert
     void addAlarm(AlarmDbEntity alarmDbEntity);
 
-    @Update(entity = AlarmDbEntity.class)
-    void updateEnabled(AlarmUpdateEnabledTuple updateEnabledTuple);
+    @Query("UPDATE alarms SET enabled = :enabled WHERE id = :id")
+    void updateEnabled(Long id, Boolean enabled);
 
     @Update
     void updateAlarm(AlarmDbEntity alarmDbEntity);

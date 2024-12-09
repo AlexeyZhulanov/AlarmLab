@@ -9,8 +9,6 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.alarm.room.AlarmDao;
 import com.example.alarm.room.AlarmDbEntity;
-import com.example.alarm.room.AlarmUpdateEnabledTuple;
-import com.example.alarm.room.AlarmsGetTuple;
 import com.example.alarm.room.SettingsDao;
 import com.example.alarm.room.SettingsDbEntity;
 
@@ -53,15 +51,12 @@ public class AlarmService implements AlarmRepository {
     public List<Alarm> getAlarms() {
         return runTask(() -> {
             alarms.clear();
-            List<AlarmsGetTuple> tuple = alarmDao.selectAlarms();
-            for (AlarmsGetTuple t : tuple) {
-                Alarm alarm = new Alarm(t.id);
-                alarm.setTimeHours(t.timeHours);
-                alarm.setTimeMinutes(t.timeMinutes);
-                alarm.setName(t.name);
-                alarm.setEnabled(t.enabled);
+            List<AlarmDbEntity> entities = alarmDao.getAlarms();
+            for (AlarmDbEntity entity : entities) {
+                Alarm alarm = entity.toAlarm();
                 alarms.add(alarm);
             }
+            Log.d("testGetAlarms", alarms.toString());
             return alarms;
         });
     }
@@ -103,9 +98,9 @@ public class AlarmService implements AlarmRepository {
     }
 
     @Override
-    public void updateEnabled(long id, int enabled) {
+    public void updateEnabled(long id, Boolean enabled) {
         runTask(() -> {
-            alarmDao.updateEnabled(new AlarmUpdateEnabledTuple(id, enabled));
+            alarmDao.updateEnabled(id, enabled);
             alarms = getAlarms(); // Update alarms
             return true;
         });
@@ -123,11 +118,11 @@ public class AlarmService implements AlarmRepository {
         });
     }
 
-    public void offAlarms(Context context) {
+    public void offAlarms() {
         runTask(() -> {
             for (Alarm alarm : alarms) {
-                if (alarm.getEnabled() == 1) {
-                    alarmDao.updateEnabled(new AlarmUpdateEnabledTuple(alarm.getId(), 0));
+                if (alarm.getEnabled()) {
+                    alarmDao.updateEnabled(alarm.getId(), false);
                 }
             }
             alarms = getAlarms();

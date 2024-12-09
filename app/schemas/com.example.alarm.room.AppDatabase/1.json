@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "18c83f8ca8cba8ba2e499100a904bd46",
+    "identityHash": "4e1d2840a8e40098c3b9166915127ed9",
     "entities": [
       {
         "tableName": "alarms",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `time_hours` INTEGER NOT NULL COLLATE NOCASE, `time_minutes` INTEGER NOT NULL COLLATE NOCASE, `name` TEXT, `enabled` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `time_hours` INTEGER NOT NULL, `time_minutes` INTEGER NOT NULL, `name` TEXT NOT NULL, `enabled` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -30,13 +30,14 @@
             "fieldPath": "name",
             "columnName": "name",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "enabled",
             "columnName": "enabled",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -61,7 +62,7 @@
       },
       {
         "tableName": "settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `melody` TEXT, `vibration` INTEGER NOT NULL, `interval` INTEGER NOT NULL, `repetitions` INTEGER NOT NULL, `disable_type` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `melody` TEXT NOT NULL, `vibration` INTEGER NOT NULL, `interval` INTEGER NOT NULL, `repetitions` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -73,7 +74,7 @@
             "fieldPath": "melody",
             "columnName": "melody",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "vibration",
@@ -90,12 +91,6 @@
           {
             "fieldPath": "repetitions",
             "columnName": "repetitions",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "disableType",
-            "columnName": "disable_type",
             "affinity": "INTEGER",
             "notNull": true
           }
@@ -123,7 +118,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '18c83f8ca8cba8ba2e499100a904bd46')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4e1d2840a8e40098c3b9166915127ed9')"
     ]
   }
 }

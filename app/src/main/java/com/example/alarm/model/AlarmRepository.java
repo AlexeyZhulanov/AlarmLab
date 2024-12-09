@@ -11,7 +11,7 @@ public interface AlarmRepository {
 
     boolean updateAlarm(Alarm alarm) throws Exception;
 
-    void updateEnabled(long id, int enabled) throws Exception;
+    void updateEnabled(long id, Boolean enabled) throws Exception;
 
     void deleteAlarms(List<Alarm> list, Context context) throws Exception;
 }
