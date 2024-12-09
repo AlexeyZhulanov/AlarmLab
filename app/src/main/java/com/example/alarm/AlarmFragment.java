@@ -4,12 +4,11 @@ import android.annotation.SuppressLint;
 import android.icu.util.Calendar;
 import android.icu.util.ULocale;
 import android.os.Bundle;
-import android.util.Log;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -45,15 +44,12 @@ public class AlarmFragment extends Fragment {
 
     @SuppressLint("DiscouragedApi")
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
         binding = FragmentAlarmBinding.inflate(inflater, container, false);
-        alarmViewModel.getPreferencesWallpaperAndInterval(requireContext(), new PreferenceCallback() {
-            @Override
-            public void onResult(Pair<String, Integer> result) {
-                wallpaper = result.first;
-                interval = result.second;
-            }
+        alarmViewModel.getPreferencesWallpaperAndInterval(result -> {
+            wallpaper = result.first;
+            interval = result.second;
         });
 
         if (!Objects.equals(wallpaper, "")) {
@@ -100,6 +96,7 @@ public class AlarmFragment extends Fragment {
                 binding.floatingActionButtonAdd.setVisibility(View.GONE);
                 binding.floatingActionButtonDelete.setVisibility(View.VISIBLE);
                 requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), new OnBackPressedCallback(true) {
+                    @SuppressLint("NotifyDataSetChanged")
                     @Override
                     public void handleOnBackPressed() {
                         if (!adapter.canLongClick) {
@@ -217,9 +214,7 @@ public class AlarmFragment extends Fragment {
     }
 
     private void changeAlarmTime(Alarm alarm) {
-        Log.d("testChangeTimeBefore", millisToAlarm.toString());
         if (millisToAlarm.containsKey(alarm.getId())) {
-            Log.d("testRemove", String.valueOf(alarm.getId()));
             millisToAlarm.remove(alarm.getId());
         } else {
             Calendar calendar = Calendar.getInstance();
@@ -232,11 +227,9 @@ public class AlarmFragment extends Fragment {
                     : calendar.getTimeInMillis();
             millisToAlarm.put(alarm.getId(), longTime);
         }
-        Log.d("testChangeTimeMid", millisToAlarm.toString());
         millisToAlarm = millisToAlarm.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
-        Log.d("testChangeTimeAfter", millisToAlarm.toString());
     }
 
     private String updateBar() {
@@ -257,7 +250,6 @@ public class AlarmFragment extends Fragment {
                 txt.append("Звонок через\n").append(hours).append(" ч. ").append(minutes % 60).append(" мин.");
             }
         }
-        Log.d("testUpdateBar", txt.toString());
         return txt.toString();
     }
 

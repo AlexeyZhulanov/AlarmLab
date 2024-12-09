@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.PopupWindow;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -34,19 +35,23 @@ public class SettingsFragment extends Fragment {
     private FragmentSettingsBinding binding;
     private long globalId;
     private MediaPlayer mediaPlayer;
-    private AlarmViewModel alarmViewModel;
+    private SettingsViewModel settingsViewModel;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @SuppressLint("DiscouragedApi")
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        alarmViewModel = new ViewModelProvider(this).get(AlarmViewModel.class);
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        settingsViewModel = new ViewModelProvider(this).get(SettingsViewModel.class);
         binding = FragmentSettingsBinding.inflate(inflater, container, false);
-        alarmViewModel.registerPreferences(requireContext());
-
+        settingsViewModel.registerPreferences();
+        settingsViewModel.wallpaper.observe(getViewLifecycleOwner(), this::updateWallpapers);
+        settingsViewModel.getPreferencesWallpaper(result -> updateWallpapers(result.first));
+        int themeNumber = settingsViewModel.getPreferencesTheme() + 1;
+        String themeText = getString(R.string.theme) + themeNumber;
+        if(themeNumber != 1) binding.colorThemeName.setText(themeText); else binding.colorThemeName.setText(R.string.classic);
         // Update wallpapers and preferences
         executorService.submit(() -> {
-            Settings settings = alarmViewModel.getSettings();
+            Settings settings = settingsViewModel.getSettings();
             requireActivity().runOnUiThread(() -> {
                 binding.melodyName.setText(settings.getMelody());
                 binding.repeatRadioGroup.setEnabled(settings.getRepetitions() == 1);
@@ -79,13 +84,14 @@ public class SettingsFragment extends Fragment {
 
         binding.changeMelody.setOnClickListener(this::showSignalsPopupMenu);
         binding.playMelody.setOnClickListener(v -> executorService.submit(() -> {
-            String melody = alarmViewModel.getSettings().getMelody();
-            playMelody(getMelodyResource(melody));
+            String melody = settingsViewModel.getSettings().getMelody();
+            int signalId = getMelodyResource(melody);
+            requireActivity().runOnUiThread(() -> playMelody(signalId));
         }));
 
         binding.switchVibration.setOnClickListener(v -> {
             Settings s = readSettings(globalId);
-            executorService.submit(() -> alarmViewModel.updateSettings(s));
+            executorService.submit(() -> settingsViewModel.updateSettings(s));
         });
 
         setUpRepeatSettings();
@@ -120,7 +126,7 @@ public class SettingsFragment extends Fragment {
 
     private void updateSettings() {
         Settings s = readSettings(globalId);
-        executorService.submit(() -> alarmViewModel.updateSettings(s));
+        executorService.submit(() -> settingsViewModel.updateSettings(s));
     }
 
     private Settings readSettings(long id) {
@@ -135,7 +141,7 @@ public class SettingsFragment extends Fragment {
     }
 
     private void updatePrefs(int interval) {
-        alarmViewModel.editPreferencesInterval(requireContext(), interval);
+        settingsViewModel.editPreferencesInterval(interval);
     }
 
     private String getMelodyName(int itemId) {
@@ -155,21 +161,21 @@ public class SettingsFragment extends Fragment {
     }
 
     private int getMelodyResource(String melody) {
-        switch (melody) {
-            case "melody1": return R.raw.default_signal1;
-            case "melody2": return R.raw.default_signal2;
-            case "melody3": return R.raw.default_signal3;
-            case "melody4": return R.raw.default_signal4;
-            case "melody5": return R.raw.default_signal5;
-            case "melody6": return R.raw.signal;
-            case "melody7": return R.raw.banjo_signal;
-            case "melody8": return R.raw.morning_signal;
-            case "melody9": return R.raw.simple_signal;
-            case "melody10": return R.raw.fitness_signal;
-            case "melody11": return R.raw.medieval_signal;
-            case "melody12": return R.raw.introduction_signal;
-            default: return -1; // Melody not selected
-        }
+        return switch (melody) {
+            case "Melody 1" -> R.raw.default_signal1;
+            case "Melody 2" -> R.raw.default_signal2;
+            case "Melody 3" -> R.raw.default_signal3;
+            case "Melody 4" -> R.raw.default_signal4;
+            case "Melody 5" -> R.raw.default_signal5;
+            case "Ship alarm" -> R.raw.signal;
+            case "Banjo" -> R.raw.banjo_signal;
+            case "Morning" -> R.raw.morning_signal;
+            case "Simple" -> R.raw.simple_signal;
+            case "Fitness" -> R.raw.fitness_signal;
+            case "Medieval" -> R.raw.medieval_signal;
+            case "Introduction" -> R.raw.introduction_signal;
+            default -> -1; // Melody not selected
+        };
     }
 
     private void showWallpapersPopupMenu(View view, ViewGroup container) {
@@ -209,44 +215,22 @@ public class SettingsFragment extends Fragment {
 
         // Create and set the adapter
         PopupMenuWallpaperAdapter adapter = new PopupMenuWallpaperAdapter(menuItems, menuItem -> {
-            String selectedWallpaper = "";
-            switch (menuItem.title) {
-                case "1.":
-                    selectedWallpaper = getString(R.string.wallpaper1);
-                    break;
-                case "2.":
-                    selectedWallpaper = getString(R.string.wallpaper2);
-                    break;
-                case "3.":
-                    selectedWallpaper = getString(R.string.wallpaper3);
-                    break;
-                case "4.":
-                    selectedWallpaper = getString(R.string.wallpaper4);
-                    break;
-                case "5.":
-                    selectedWallpaper = getString(R.string.wallpaper5);
-                    break;
-                case "6.":
-                    selectedWallpaper = getString(R.string.wallpaper6);
-                    break;
-                case "7.":
-                    selectedWallpaper = getString(R.string.wallpaper7);
-                    break;
-                case "8.":
-                    selectedWallpaper = getString(R.string.wallpaper8);
-                    break;
-                case "9.":
-                    selectedWallpaper = getString(R.string.wallpaper9);
-                    break;
-                case "10.":
-                    selectedWallpaper = getString(R.string.wallpaper10);
-                    break;
-                case "Classic":
-                    selectedWallpaper = ""; // Default case
-                    break;
-            }
+            String selectedWallpaper = switch (menuItem.title) {
+                case "1." -> getString(R.string.wallpaper1);
+                case "2." -> getString(R.string.wallpaper2);
+                case "3." -> getString(R.string.wallpaper3);
+                case "4." -> getString(R.string.wallpaper4);
+                case "5." -> getString(R.string.wallpaper5);
+                case "6." -> getString(R.string.wallpaper6);
+                case "7." -> getString(R.string.wallpaper7);
+                case "8." -> getString(R.string.wallpaper8);
+                case "9." -> getString(R.string.wallpaper9);
+                case "10." -> getString(R.string.wallpaper10);
+                case "Classic" -> "";
+                default -> ""; // Default case
+            };
             // Save the selected wallpaper
-            alarmViewModel.editPreferencesWallpaper(requireContext(), selectedWallpaper);
+            settingsViewModel.editPreferencesWallpaper(selectedWallpaper);
             // Dismiss the popup
             popupWindow.dismiss();
         });
@@ -287,7 +271,7 @@ public class SettingsFragment extends Fragment {
         );
 
         ColorThemeMenuAdapter adapter = new ColorThemeMenuAdapter(menuItems, menuItem -> {
-            alarmViewModel.editPreferencesTheme(requireContext(), menuItem.getThemeNumber());
+            settingsViewModel.editPreferencesTheme(menuItem.getThemeNumber());
             requireActivity().recreate();
             popupWindow.dismiss();
         });
@@ -295,12 +279,6 @@ public class SettingsFragment extends Fragment {
         recyclerView.setAdapter(adapter);
 
         popupWindow.showAsDropDown(view);
-    }
-
-
-    private void onWallpaperItemSelected(MenuItemData menuItem) {
-        String temp = menuItem.title.equals("Classic") ? "" : "wallpaper" + menuItem.title.charAt(0);
-        alarmViewModel.editPreferencesWallpaper(requireContext(), temp);
     }
 
     @SuppressLint("DiscouragedApi")
@@ -313,7 +291,7 @@ public class SettingsFragment extends Fragment {
             }
         } else {
             binding.settingsLayout.setBackground(null);
-            binding.wallpaperName.setText("Classic");
+            binding.wallpaperName.setText(R.string.classic);
         }
     }
 
@@ -329,7 +307,10 @@ public class SettingsFragment extends Fragment {
             binding.floatingActionButtonVolumeOff.setVisibility(View.GONE);
         });
         binding.floatingActionButtonVolumeOff.setVisibility(View.VISIBLE);
-        binding.floatingActionButtonVolumeOff.setOnClickListener(v -> stopAndReleaseMediaPlayer());
+        binding.floatingActionButtonVolumeOff.setOnClickListener(v -> {
+            stopAndReleaseMediaPlayer();
+            binding.floatingActionButtonVolumeOff.setVisibility(View.GONE);
+        });
     }
 
     private void stopAndReleaseMediaPlayer() {
@@ -349,7 +330,7 @@ public class SettingsFragment extends Fragment {
             if (newMelodyName != null) {
                 binding.melodyName.setText(newMelodyName);
                 Settings settings = readSettings(globalId);
-                executorService.submit(() -> alarmViewModel.updateSettings(settings));
+                executorService.submit(() -> settingsViewModel.updateSettings(settings));
                 return true;
             }
             return false;
@@ -360,7 +341,7 @@ public class SettingsFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        alarmViewModel.unregisterPreferences(requireContext());
+        settingsViewModel.unregisterPreferences();
         executorService.shutdown();
     }
 

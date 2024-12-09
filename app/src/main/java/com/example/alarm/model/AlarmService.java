@@ -2,6 +2,8 @@ package com.example.alarm.model;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteConstraintException;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -155,9 +157,11 @@ public class AlarmService implements AlarmRepository {
     }
 
     public void notifyChanges() {
-        for (AlarmsListener listener : listeners) {
-            listener.invoke(alarms);
-        }
+        new Handler(Looper.getMainLooper()).post(() -> {
+            for (AlarmsListener listener : listeners) {
+                listener.invoke(alarms);
+            }
+        });
     }
 
     // Utility method to handle background tasks

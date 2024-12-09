@@ -8,10 +8,11 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.provider.Settings;
 import android.text.SpannableString;
@@ -36,17 +37,13 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     @Inject
     AlarmService alarmsService;
-    private ExecutorService uiExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService uiExecutor = Executors.newSingleThreadExecutor();
     public static String APP_PREFERENCES = "APP_PREFERENCES";
     public static String PREF_THEME = "PREF_THEME";
 
-    private Fragment currentFragment() {
-        return getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
-    }
-
     private final FragmentManager.FragmentLifecycleCallbacks fragmentListener = new FragmentManager.FragmentLifecycleCallbacks() {
         @Override
-        public void onFragmentViewCreated(FragmentManager fm, Fragment f, View v, Bundle savedInstanceState) {
+        public void onFragmentViewCreated(@NonNull FragmentManager fm, @NonNull Fragment f, @NonNull View v, Bundle savedInstanceState) {
             super.onFragmentViewCreated(fm, f, v, savedInstanceState);
         }
     };
@@ -115,23 +112,24 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case 2131231129:
+        return switch (item.getItemId()) {
+            case 2131231129 -> {
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragmentContainer, new SettingsFragment())
                         .addToBackStack("settings")
                         .commit();
-                return true;
-            case 2131231112:
+                yield true;
+            }
+            case 2131231112 -> {
                 uiExecutor.execute(() -> {
                     alarmsService.offAlarms();
                     ((AlarmFragment) getSupportFragmentManager().findFragmentByTag("ALARM_FRAGMENT_TAG")).fillAndUpdateBar();
                 });
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+                yield true;
+            }
+            default -> super.onOptionsItemSelected(item);
+        };
     }
 
     private void checkOverlayPermission(Context context) {

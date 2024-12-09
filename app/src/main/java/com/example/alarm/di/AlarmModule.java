@@ -1,7 +1,8 @@
 package com.example.alarm.di;
 
-import android.app.AlarmManager;
 import android.content.Context;
+import android.content.SharedPreferences;
+
 import androidx.room.Room;
 import com.example.alarm.model.AlarmService;
 import com.example.alarm.room.AlarmDao;
@@ -17,6 +18,7 @@ import dagger.hilt.components.SingletonComponent;
 @Module
 @InstallIn(SingletonComponent.class)
 public class AlarmModule {
+    private static final String APP_PREFERENCES = "APP_PREFERENCES";
 
     @Provides
     @Singleton
@@ -45,7 +47,8 @@ public class AlarmModule {
     }
 
     @Provides
-    public AlarmManager provideAlarmManager(@ApplicationContext Context context) {
-        return (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+    @Singleton
+    public SharedPreferences provideSharedPreferences(@ApplicationContext Context context) {
+        return context.getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
     }
 }

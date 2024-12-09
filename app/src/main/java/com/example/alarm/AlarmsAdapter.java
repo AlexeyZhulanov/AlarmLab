@@ -110,7 +110,6 @@ public class AlarmsAdapter extends RecyclerView.Adapter<AlarmsAdapter.AlarmsView
         binding.getRoot().setOnLongClickListener(this);
         binding.switch1.setOnClickListener(this);
         binding.checkBox.setOnClickListener(this);
-        binding.getRoot().setHapticFeedbackEnabled(true);
         return new AlarmsViewHolder(binding);
     }
 

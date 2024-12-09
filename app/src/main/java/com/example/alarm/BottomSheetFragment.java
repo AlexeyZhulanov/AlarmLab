@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import androidx.lifecycle.ViewModelProvider;
+import androidx.annotation.NonNull;
 
 import com.example.alarm.databinding.FragmentBottomsheetBinding;
 import com.example.alarm.model.Alarm;
@@ -37,7 +37,7 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         binding.timePicker.setIs24HourView(true);
         if (isAdd) {
@@ -64,7 +64,7 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         binding = FragmentBottomsheetBinding.inflate(inflater, container, false);
         return binding.getRoot();
     }
@@ -98,12 +98,14 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
 
         executorService.execute(() -> {
             alarmViewModel.updateAlarm(alarmNew, result -> {
+                new Handler(Looper.getMainLooper()).post(() -> {
                 if(result) {
                     bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew);
                 } else {
                     Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
                 }
                 dismiss();
+                });
             });
         });
     }
