@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.icu.util.Calendar;
 import android.icu.util.ULocale;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -65,16 +66,13 @@ public class AlarmFragment extends Fragment {
         adapter = new AlarmsAdapter(interval, new AlarmActionListener() {
             @Override
             public void onAlarmEnabled(Alarm alarm, int index) {
-                executorService.submit(() -> {
-                    Boolean bool = !alarm.getEnabled();
-                    changeAlarmTime(alarm, !alarm.getEnabled());
-                    binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
+                changeAlarmTime(alarm);
+                binding.barTextView.setText(updateBar());
 
-                    alarmViewModel.updateEnabledAlarm(alarm, bool, result -> {
-                        if(result) {
-                            adapter.notifyItemChanged(index);
-                        }
-                    });
+                alarmViewModel.updateEnabledAlarm(alarm, !alarm.getEnabled(), result -> {
+                    if(result) {
+                        adapter.notifyItemChanged(index);
+                    }
                 });
             }
 
@@ -88,8 +86,8 @@ public class AlarmFragment extends Fragment {
                     @Override
                     public void onChangeAlarm(Alarm alarmOld, Alarm alarmNew) {
                         if (alarmNew.getEnabled()) {
-                            changeAlarmTime(alarmOld, true);
-                            changeAlarmTime(alarmNew, false);
+                            changeAlarmTime(alarmOld);
+                            changeAlarmTime(alarmNew);
                             binding.barTextView.setText(updateBar());
                         }
                     }
@@ -122,7 +120,7 @@ public class AlarmFragment extends Fragment {
                     if (!alarmsToDelete.isEmpty()) {
                         alarmViewModel.deleteAlarms(alarmsToDelete, getContext());
                         for (Alarm a : alarmsToDelete) {
-                            if (a.getEnabled()) changeAlarmTime(a, true);
+                            if (a.getEnabled()) changeAlarmTime(a);
                         }
                         binding.barTextView.setText(updateBar());
                         binding.floatingActionButtonDelete.setVisibility(View.GONE);
@@ -158,7 +156,7 @@ public class AlarmFragment extends Fragment {
                     alr.setTimeMinutes(alarm.getTimeMinutes());
                     alr.setName(alarm.getName());
                     alr.setEnabled(alarm.getEnabled());
-                    changeAlarmTime(alr, false);
+                    changeAlarmTime(alr);
                     binding.barTextView.setText(updateBar());
                 }
 
@@ -218,8 +216,10 @@ public class AlarmFragment extends Fragment {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
     }
 
-    private void changeAlarmTime(Alarm alarm, boolean isDisable) {
-        if (isDisable) {
+    private void changeAlarmTime(Alarm alarm) {
+        Log.d("testChangeTimeBefore", millisToAlarm.toString());
+        if (millisToAlarm.containsKey(alarm.getId())) {
+            Log.d("testRemove", String.valueOf(alarm.getId()));
             millisToAlarm.remove(alarm.getId());
         } else {
             Calendar calendar = Calendar.getInstance();
@@ -232,9 +232,11 @@ public class AlarmFragment extends Fragment {
                     : calendar.getTimeInMillis();
             millisToAlarm.put(alarm.getId(), longTime);
         }
+        Log.d("testChangeTimeMid", millisToAlarm.toString());
         millisToAlarm = millisToAlarm.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+        Log.d("testChangeTimeAfter", millisToAlarm.toString());
     }
 
     private String updateBar() {
@@ -255,14 +257,13 @@ public class AlarmFragment extends Fragment {
                 txt.append("Звонок через\n").append(hours).append(" ч. ").append(minutes % 60).append(" мин.");
             }
         }
+        Log.d("testUpdateBar", txt.toString());
         return txt.toString();
     }
 
     public void fillAndUpdateBar() {
-        executorService.submit(() -> {
-            millisToAlarm = fillAlarmsTime();
-            binding.barTextView.post(() -> binding.barTextView.setText(updateBar()));
-        });
+        millisToAlarm = fillAlarmsTime();
+        binding.barTextView.setText(updateBar());
     }
 
     @Override
