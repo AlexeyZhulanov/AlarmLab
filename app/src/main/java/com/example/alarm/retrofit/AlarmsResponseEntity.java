@@ -1,13 +1,11 @@
 package com.example.alarm.retrofit;
 
-import com.example.alarm.model.AlarmShort;
-
 import java.util.List;
 
 public class AlarmsResponseEntity {
-    private List<AlarmShort> alarms;
+    private List<Integer> alarms;
 
-    public List<AlarmShort> getAlarms() {
+    public List<Integer> getAlarms() {
         return alarms;
     }
 }

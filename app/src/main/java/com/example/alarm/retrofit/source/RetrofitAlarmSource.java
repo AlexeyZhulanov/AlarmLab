@@ -1,6 +1,6 @@
 package com.example.alarm.retrofit.source;
 
-import com.example.alarm.model.AlarmShort;
+import com.example.alarm.model.Alarm;
 import com.example.alarm.model.exceptions.AppException;
 import com.example.alarm.retrofit.AlarmApi;
 import com.example.alarm.retrofit.AlarmRequestEntity;
@@ -24,9 +24,9 @@ public class RetrofitAlarmSource extends BaseRetrofitSource implements AlarmSour
     }
 
     @Override
-    public String setAlarm(int hours, int minutes) throws AppException {
+    public String setAlarm(Alarm alarm) throws AppException {
         return wrapRetrofitExceptions(() -> {
-            AlarmRequestEntity requestEntity = new AlarmRequestEntity(hours, minutes);
+            AlarmRequestEntity requestEntity = new AlarmRequestEntity((int)alarm.getId(), alarm.getTimeHours(), alarm.getTimeMinutes(), alarm.getName());
             Response<ResponseEntityMessageAnswer> response = alarmApi.setAlarm(requestEntity).execute();
             if (!response.isSuccessful()) {
                 throw new HttpException(response);
@@ -36,13 +36,36 @@ public class RetrofitAlarmSource extends BaseRetrofitSource implements AlarmSour
     }
 
     @Override
-    public List<AlarmShort> getAlarms() throws AppException {
+    public List<Integer> getAlarms() throws AppException {
         return wrapRetrofitExceptions(() -> {
             Response<AlarmsResponseEntity> response = alarmApi.getAlarms().execute();
             if (!response.isSuccessful()) {
                 throw new HttpException(response);
             }
             return Objects.requireNonNull(response.body()).getAlarms();
+        });
+    }
+
+    @Override
+    public String deleteAlarm(int alarm_id) throws AppException {
+        return wrapRetrofitExceptions(() -> {
+            Response<ResponseEntityMessageAnswer> response = alarmApi.deleteAlarm(alarm_id).execute();
+            if (!response.isSuccessful()) {
+                throw new HttpException(response);
+            }
+            return Objects.requireNonNull(response.body()).getMessage();
+        });
+    }
+
+    @Override
+    public String updateAlarm(Alarm alarm) throws AppException {
+        return wrapRetrofitExceptions(() -> {
+            AlarmRequestEntity requestEntity = new AlarmRequestEntity((int)alarm.getId(), alarm.getTimeHours(), alarm.getTimeMinutes(), alarm.getName());
+            Response<ResponseEntityMessageAnswer> response = alarmApi.updateAlarm(requestEntity).execute();
+            if (!response.isSuccessful()) {
+                throw new HttpException(response);
+            }
+            return Objects.requireNonNull(response.body()).getMessage();
         });
     }
 }

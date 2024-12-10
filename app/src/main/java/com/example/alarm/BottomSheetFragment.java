@@ -78,10 +78,9 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         executorService.execute(() -> {
             alarmViewModel.addAlarm(alarm, result -> {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    if (result) {
+                    Toast.makeText(requireContext(), result.second, Toast.LENGTH_SHORT).show();
+                    if (result.first) {
                         bottomSheetListener.onAddAlarm(alarm);
-                    } else {
-                        Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
                     }
                     dismiss();
                 });
@@ -99,10 +98,9 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         executorService.execute(() -> {
             alarmViewModel.updateAlarm(alarmNew, result -> {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                if(result) {
+                    Toast.makeText(requireContext(), result.second, Toast.LENGTH_SHORT).show();
+                if(result.first) {
                     bottomSheetListener.onChangeAlarm(oldAlarm, alarmNew);
-                } else {
-                    Toast.makeText(getContext(), getString(R.string.error_is_exist), Toast.LENGTH_SHORT).show();
                 }
                 dismiss();
                 });

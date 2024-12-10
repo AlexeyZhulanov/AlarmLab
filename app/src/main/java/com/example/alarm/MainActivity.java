@@ -8,6 +8,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,8 +24,12 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import com.example.alarm.databinding.ActivityMainBinding;
+import com.example.alarm.model.Alarm;
 import com.example.alarm.model.AlarmService;
+import com.example.alarm.model.RetrofitService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     @Inject
     AlarmService alarmsService;
+    @Inject
+    RetrofitService retrofitService;
+
     private final ExecutorService uiExecutor = Executors.newSingleThreadExecutor();
     public static String APP_PREFERENCES = "APP_PREFERENCES";
     public static String PREF_THEME = "PREF_THEME";
@@ -122,10 +130,17 @@ public class MainActivity extends AppCompatActivity {
                 yield true;
             }
             case 2131231112 -> {
-                uiExecutor.execute(() -> {
-                    alarmsService.offAlarms();
-                    ((AlarmFragment) getSupportFragmentManager().findFragmentByTag("ALARM_FRAGMENT_TAG")).fillAndUpdateBar();
-                });
+                List<Alarm> list = new ArrayList<>();
+                for(Alarm alarm : alarmsService.alarms) {
+                    if(alarm.getEnabled()) {
+                        Pair<Boolean, String> result = retrofitService.deleteAlarm((int)alarm.getId());
+                        if(result.first) {
+                            list.add(alarm);
+                        }
+                    }
+                }
+                alarmsService.offAlarms(list);
+                ((AlarmFragment) getSupportFragmentManager().findFragmentByTag("ALARM_FRAGMENT_TAG")).fillAndUpdateBar();
                 yield true;
             }
             default -> super.onOptionsItemSelected(item);

@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +21,7 @@ import com.example.alarm.databinding.FragmentAlarmBinding;
 import com.example.alarm.model.Alarm;
 import dagger.hilt.android.AndroidEntryPoint;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -66,7 +69,8 @@ public class AlarmFragment extends Fragment {
                 binding.barTextView.setText(updateBar());
 
                 alarmViewModel.updateEnabledAlarm(alarm, !alarm.getEnabled(), result -> {
-                    if(result) {
+                    Toast.makeText(requireContext(), result.second, Toast.LENGTH_SHORT).show();
+                    if(result.first) {
                         adapter.notifyItemChanged(index);
                     }
                 });
@@ -114,9 +118,17 @@ public class AlarmFragment extends Fragment {
 
                 binding.floatingActionButtonDelete.setOnClickListener(v -> {
                     List<Alarm> alarmsToDelete = adapter.getDeleteList();
+                    List<Alarm> resultList = new ArrayList<>();
                     if (!alarmsToDelete.isEmpty()) {
-                        alarmViewModel.deleteAlarms(alarmsToDelete, getContext());
-                        for (Alarm a : alarmsToDelete) {
+                        alarmViewModel.deleteAlarms(alarmsToDelete, getContext(), result -> {
+                            if(result.first) {
+                                Toast.makeText(requireContext(), "Будильники успешно удалены", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(requireContext(), "Ошибка: Удалилось не всё", Toast.LENGTH_SHORT).show();
+                            }
+                            resultList.addAll(result.second);
+                        });
+                        for (Alarm a : resultList) {
                             if (a.getEnabled()) changeAlarmTime(a);
                         }
                         binding.barTextView.setText(updateBar());
@@ -164,7 +176,7 @@ public class AlarmFragment extends Fragment {
             fragment.show(getChildFragmentManager(), "AddTag");
         });
 
-        alarmViewModel.getInitCompleted().observe(getViewLifecycleOwner(), it -> {
+        alarmViewModel.initCompleted.observe(getViewLifecycleOwner(), it -> {
             if (it) {
                 updateJob = executorService.submit(() -> {
                     try {

@@ -26,7 +26,7 @@ import java.util.concurrent.Future;
 public class AlarmService implements AlarmRepository {
     private final AlarmDao alarmDao;
     private final SettingsDao settingsDao;
-    private List<Alarm> alarms = new ArrayList<>();
+    public List<Alarm> alarms = new ArrayList<>();
     private final Set<AlarmsListener> listeners = new HashSet<>();
     private Settings settings = new Settings(0);
 
@@ -58,7 +58,6 @@ public class AlarmService implements AlarmRepository {
                 Alarm alarm = entity.toAlarm();
                 alarms.add(alarm);
             }
-            Log.d("testGetAlarms", alarms.toString());
             return alarms;
         });
     }
@@ -120,9 +119,28 @@ public class AlarmService implements AlarmRepository {
         });
     }
 
-    public void offAlarms() {
+    @Override
+    public void syncAlarms(List<Integer> ids) {
+        Set<Integer> idsSet = new HashSet<>(ids); // for optimization O(1) contains for Set vs O(n) for List
         runTask(() -> {
-            for (Alarm alarm : alarms) {
+            for(Alarm alarm : alarms) {
+                boolean isEnabled = alarm.getEnabled();
+                boolean isInIds = idsSet.contains((int)alarm.getId());
+                if (isEnabled && !isInIds) {
+                    updateEnabled(alarm.getId(), false);
+                }
+                if (!isEnabled && isInIds) {
+                    updateEnabled(alarm.getId(), true);
+                }
+            }
+            notifyChanges();
+            return true;
+        });
+    }
+
+    public void offAlarms(List<Alarm> list) {
+        runTask(() -> {
+            for (Alarm alarm : list) {
                 if (alarm.getEnabled()) {
                     alarmDao.updateEnabled(alarm.getId(), false);
                 }
