@@ -82,11 +82,21 @@ public class AlarmViewModel extends ViewModel {
     }
 
     public void addAlarm(Alarm alarm, AlarmPairCallback callback) {
+        boolean res = alarmsService.addAlarm(alarm);
+        if(res) {
+            callback.onResult(new Pair<>(true, ""));
+        } else {
+            callback.onResult(new Pair<>(false, "Будильник уже есть в БД"));
+        }
+    }
+
+    public void setAlarm(Alarm alarm, AlarmPairCallback callback) {
         Pair<Boolean, String> result = retrofitService.setAlarm(alarm);
         if(result.first) {
-            alarmsService.addAlarm(alarm);
             callback.onResult(new Pair<>(true, result.second));
         } else {
+            alarmsService.updateEnabled(alarm.getId(), false);
+            alarmsService.notifyChanges();
             callback.onResult(new Pair<>(false, result.second));
         }
     }

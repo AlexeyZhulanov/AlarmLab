@@ -78,9 +78,10 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         executorService.execute(() -> {
             alarmViewModel.addAlarm(alarm, result -> {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    Toast.makeText(requireContext(), result.second, Toast.LENGTH_SHORT).show();
                     if (result.first) {
                         bottomSheetListener.onAddAlarm(alarm);
+                    } else {
+                        Toast.makeText(requireContext(), result.second, Toast.LENGTH_SHORT).show();
                     }
                     dismiss();
                 });

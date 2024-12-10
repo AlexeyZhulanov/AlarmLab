@@ -122,20 +122,19 @@ public class AlarmService implements AlarmRepository {
     @Override
     public void syncAlarms(List<Integer> ids) {
         Set<Integer> idsSet = new HashSet<>(ids); // for optimization O(1) contains for Set vs O(n) for List
-        runTask(() -> {
-            for(Alarm alarm : alarms) {
-                boolean isEnabled = alarm.getEnabled();
-                boolean isInIds = idsSet.contains((int)alarm.getId());
-                if (isEnabled && !isInIds) {
-                    updateEnabled(alarm.getId(), false);
-                }
-                if (!isEnabled && isInIds) {
-                    updateEnabled(alarm.getId(), true);
-                }
+        List<Alarm> alarmsCopy = new ArrayList<>(alarms);
+
+        for (Alarm alarm : alarmsCopy) {
+            boolean isEnabled = alarm.getEnabled();
+            boolean isInIds = idsSet.contains((int) alarm.getId());
+            if (isEnabled && !isInIds) {
+                updateEnabled(alarm.getId(), false);
             }
-            notifyChanges();
-            return true;
-        });
+            if (!isEnabled && isInIds) {
+                updateEnabled(alarm.getId(), true);
+            }
+        }
+        notifyChanges();
     }
 
     public void offAlarms(List<Alarm> list) {

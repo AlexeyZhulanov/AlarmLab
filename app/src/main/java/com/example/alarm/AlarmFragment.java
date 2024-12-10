@@ -165,6 +165,7 @@ public class AlarmFragment extends Fragment {
                     alr.setTimeMinutes(alarm.getTimeMinutes());
                     alr.setName(alarm.getName());
                     alr.setEnabled(alarm.getEnabled());
+                    setAlarm(alr);
                     changeAlarmTime(alr);
                     binding.barTextView.setText(updateBar());
                 }
@@ -201,6 +202,12 @@ public class AlarmFragment extends Fragment {
         if (updateJob != null) {
             updateJob.cancel(true);
         }
+    }
+
+    private void setAlarm(Alarm alarm) {
+        alarmViewModel.setAlarm(alarm, result -> {
+            Toast.makeText(requireContext(), result.second, Toast.LENGTH_SHORT).show();
+        });
     }
 
     private Map<Long, Long> fillAlarmsTime() {
